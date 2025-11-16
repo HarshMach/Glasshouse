@@ -139,12 +139,7 @@ const RSS_SOURCES = [
     category: CATEGORIES.SCIENCE,
     priority: 'medium',
   },
-  {
-    name: 'ESPN',
-    url: 'https://www.espn.com/espn/rss/news',
-    category: CATEGORIES.SPORTS,
-    priority: 'medium',
-  },
+ 
 ];
 
 module.exports = {

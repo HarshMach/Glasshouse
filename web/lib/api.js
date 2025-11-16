@@ -1,7 +1,7 @@
-const API_BASE = "https://us-central1-news-app-b67e2.cloudfunctions.net";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || import.meta.env.NEXT_PUBLIC_API_BASE_URL;
 
 if (!API_BASE) {
-  console.warn('NEXT_PUBLIC_API_BASE_URL is not set. Frontend cannot reach backend.');
+  console.warn('VITE_API_BASE_URL (or NEXT_PUBLIC_API_BASE_URL) is not set. Frontend cannot reach backend.');
 }
 
 async function handleResponse(res) {
@@ -12,9 +12,10 @@ async function handleResponse(res) {
   return res.json();
 }
 
-export async function getArticles({ category = 'all', limit = 50 } = {}) {
+export async function getArticles({ category = 'all', sortBy = 'recent', limit = 50 } = {}) {
   const url = new URL(`${API_BASE}/getArticles`);
   url.searchParams.set('category', category);
+  url.searchParams.set('sortBy', sortBy);
   url.searchParams.set('limit', String(limit));
   const res = await fetch(url.toString(), { cache: 'no-store' });
   return handleResponse(res);

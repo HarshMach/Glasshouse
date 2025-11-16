@@ -268,9 +268,10 @@ exports.getArticles = onRequest(
 
     try {
       const category = req.query.category || 'all';
+      const sortBy = req.query.sortBy || 'recent'; // 'recent' or 'popular'
       const limit = Math.min(parseInt(req.query.limit) || 50, 100);
 
-      const articles = await storageService.getArticles({ category, limit });
+      const articles = await storageService.getArticles({ category, sortBy, limit });
 
       res.json({
         success: true,
