@@ -1,18 +1,28 @@
 import React, { useState, useEffect } from "react";
-
-const menuItems = [
-  { label: "WORLD", href: "" },
-  { label: "POLITICS", href: "" },
-  { label: "TECH", href: "" },
-  { label: "SCIENCE", href: "" },
-  { label: "BUSINESS", href: "" },
+import { Link } from "react-router-dom";
+const CATEGORIES = [
+  { id: 'world', label: 'WORLD' },
+  { id: 'politics', label: 'POLITICS' },
+  { id: 'tech', label: 'TECH' },
+  { id: 'science', label: 'SCIENCE' },
+  { id: 'business', label: 'BUSINESS' },
 ];
 
-const Menu = () => {
+const Menu = ({ onCategoryChange, currentCategory = 'all' }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
+  };
+
+  const handleCategoryClick = (categoryId) => {
+    onCategoryChange(categoryId);
+    setIsOpen(false);
+  };
+
+  const handleReset = () => {
+    onCategoryChange('all');
+    setIsOpen(false);
   };
 
   useEffect(() => {
@@ -63,7 +73,7 @@ const Menu = () => {
       >
         {/* Hidden title for screen readers */}
         <h2 id="navigation-title" className="sr-only">
-          Main Navigation Menu
+          Categories Menu
         </h2>
 
         <div className="navigation-container flex flex-col h-full">
@@ -71,25 +81,39 @@ const Menu = () => {
           <nav
             className="main-navigation-section flex-1 flex flex-col justify-center items-center text-center px-8 py-16"
             role="navigation"
-            aria-label="Main navigation"
+            aria-label="Categories navigation"
             onClick={(e) => e.stopPropagation()}
           >
             <ul className="navigation-menu space-y-4 w-full" role="list">
-              {menuItems.map((item, index) => (
+              {CATEGORIES.map((category) => (
                 <li
-                  key={item.label}
-                  className="navigation-item w-full"
+                  key={category.id}
+                  className="navigation-item w-full relative"
                   role="listitem"
                 >
-                  <a
-                    href={item.href}
-                    className="navigation-link block w-full bg-black text-[#FF6A00] font-extrabold uppercase text-6xl py-4 px-4 leading-tight focus:outline-none text-center"
+                  <button
+                    onClick={() => handleCategoryClick(category.id)}
+                    className={`navigation-link block w-full bg-black text-[#FF6A00] font-extrabold uppercase text-6xl py-4 px-4 leading-tight focus:outline-none text-center transition-colors ${
+                      currentCategory === category.id ? 'ring-4 ring-[#FF6A00]' : ''
+                    }`}
                     style={{ textDecoration: "none" }}
-                    onClick={toggleMenu}
-                    aria-describedby={`nav-item-${item.label}`}
+                    aria-describedby={`nav-item-${category.label}`}
                   >
-                    {item.label}
-                  </a>
+                    {category.label}
+                  </button>
+                  
+                  {/* Reset Cross Button - Only show when this category is active */}
+                  {currentCategory === category.id && (
+                    <button
+  onClick={handleReset}
+  className="absolute right-4 top-1/3 -translate-y-1/2 text-[#FF6A00] 
+             text-[150px] font-light hover:text-[#f97517] transition-colors z-30"
+  aria-label="Reset to all categories"
+>
+  ×
+</button>
+
+                  )}
                 </li>
               ))}
             </ul>
@@ -97,21 +121,21 @@ const Menu = () => {
 
           {/* Footer Section */}
           <footer className="navigation-footer pb-4 flex justify-center space-x-4 text-black text-sm">
-            <a href="#" style={{ textDecoration: "none" }}>
-              ABOUT
-            </a>
+            <Link to="/about" style={{ textDecoration: "none" }}>
+  ABOUT
+</Link>
+          
+         
             <span>|</span>
-            <a href="#" style={{ textDecoration: "none" }}>
-              LEGAL
-            </a>
+            <Link to="/" style={{ textDecoration: "none" }}>
+  HOME
+</Link>
+          
+         
             <span>|</span>
-            <a href="#" style={{ textDecoration: "none" }}>
-              JOBS
-            </a>
-            <span>|</span>
-            <a href="#" style={{ textDecoration: "none" }}>
-              GOT A TIP?
-            </a>
+           <Link to="/got-a-tip" style={{ textDecoration: "none" }} onClick={() => setIsOpen(false)}>
+  GOT A TIP?
+</Link>
           </footer>
         </div>
       </div>
