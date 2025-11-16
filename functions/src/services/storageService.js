@@ -187,11 +187,12 @@ class StorageService {
   /**
    * Get articles with filters and pagination
    * Only returns AI-processed, quality articles that have both summary and dailyLifeImpact.
-   * Results are ordered by recency (newest first).
+   * Results can be ordered by recency (newest first) or popularity (engagement-based).
    */
   async getArticles(options = {}) {
     const {
       category = null,
+      sortBy = 'recent', // 'recent' or 'popular'
       limit = 50,
       startAfter = null,
       searchQuery = null, // reserved for future server-side filtering
@@ -221,7 +222,8 @@ class StorageService {
 
         // Enforce that only articles with a summary are returned
         // (dailyLifeImpact is optional so we still show useful content)
-        if (!data.summary) {
+        // Also filter out sports articles
+        if (!data.summary || data.category?.toLowerCase() === 'sports') {
           return;
         }
 
@@ -234,8 +236,18 @@ class StorageService {
         });
       });
 
-      // Ensure newest first (pubDate desc) regardless of Firestore ordering nuances
-      articles.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+      // Sort articles based on sortBy parameter
+      if (sortBy === 'popular') {
+        // Sort by engagement: combination of likes, comments, and views
+        articles.sort((a, b) => {
+          const engagementA = (a.likes || 0) * 3 + (a.commentCount || 0) * 2 + (a.views || 0) * 0.1;
+          const engagementB = (b.likes || 0) * 3 + (b.commentCount || 0) * 2 + (b.views || 0) * 0.1;
+          return engagementB - engagementA;
+        });
+      } else {
+        // Default: Sort by recency (newest first)
+        articles.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+      }
 
       return articles.slice(0, limit);
     } catch (error) {
@@ -253,8 +265,6 @@ class StorageService {
       const snapshot = await this.db
         .collection(COLLECTIONS.ARTICLES)
         .where('processed', '==', true)
-        .where('qualityScore', '>=', 3)
-        .orderBy('qualityScore', 'desc')
         .orderBy('pubDate', 'desc')
         .limit(limit * 3) // overfetch; we'll trim after fuzzy filtering
         .get();
@@ -268,19 +278,22 @@ class StorageService {
       const query = searchQuery.toLowerCase();
 
       const filtered = allArticles.filter((article) => {
-        // Only consider articles that have summary and dailyLifeImpact
-        if (!article.summary || !article.dailyLifeImpact) return false;
+        // Only consider articles that have a summary (matches getArticles logic)
+        // Also filter out sports articles
+        if (!article.summary || article.category?.toLowerCase() === 'sports') return false;
 
         const title = article.title || '';
         const category = article.category || '';
         const summary = article.summary || '';
+        const dailyLifeImpact = article.dailyLifeImpact || '';
 
         // Basic substring matches first (fast path)
         const titleMatch = title.toLowerCase().includes(query);
         const categoryMatch = category.toLowerCase().includes(query);
         const summaryMatch = summary.toLowerCase().includes(query);
+        const impactMatch = dailyLifeImpact.toLowerCase().includes(query);
 
-        if (titleMatch || categoryMatch || summaryMatch) {
+        if (titleMatch || categoryMatch || summaryMatch || impactMatch) {
           return true;
         }
 
@@ -289,8 +302,9 @@ class StorageService {
         const fuzzyTitle = fuzzyMatch(query, title, 0.7);
         const fuzzyCategory = fuzzyMatch(query, category, 0.7);
         const fuzzySummary = fuzzyMatch(query, summary, 0.75);
+        const fuzzyImpact = fuzzyMatch(query, dailyLifeImpact, 0.75);
 
-        return fuzzyTitle || fuzzyCategory || fuzzySummary;
+        return fuzzyTitle || fuzzyCategory || fuzzySummary || fuzzyImpact;
       });
 
       // Sort by most recent first

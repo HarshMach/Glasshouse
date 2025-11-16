@@ -118,41 +118,76 @@ Respond with ONLY the category name, nothing else.`;
   }
 
   /**
-   * Generate comprehensive summary with context
+   * Generate summary AND an image prompt in a single AI call.
+   * Returns { summary, imagePrompt }.
    */
-  async generateSummary(article) {
+  async generateSummaryAndImagePrompt(article) {
     try {
       await this.rateLimitDelay();
 
-      const prompt = `You are a professional news summarizer for "The GlassHouse" - a news platform that provides clear, actionable insights.
+      const prompt = `You are a professional news summarizer and visual editor for "The GlassHouse" - a news platform that provides clear, actionable insights.
 
-Summarize this article in 2-3 sentences. Focus on:
-- What happened (key facts and events)
-- Who is involved (key people, organizations, or groups)
-- When and where it occurred
-- Why it matters
+Your tasks:
+1) Write a clear, neutral 2-3 sentence summary covering:
+   - What happened (key facts and events)
+   - Who is involved (key people, organizations, or groups)
+   - When and where it occurred
+   - Why it matters
 
-Be clear, concise, and neutral. Avoid sensationalism.
+2) Propose a SHORT image prompt (3-10 words) for a representative photo or illustration that would fit this article. The image prompt should be concrete and visual (e.g., "shoppers browsing thrift store clothing racks"), not abstract (avoid generic words like "concept" or "metaphor").
+
+Respond ONLY with valid JSON in this format (no markdown, no extra text):
+{
+  "summary": "...",
+  "imagePrompt": "..."
+}
 
 Title: ${article.title}
 Source: ${article.source}
 Category: ${article.category}
 Content: ${article.combinedDescription || article.description}
-
-Summary:`;
+`;
 
       const result = await this.model.generateContent(prompt);
-      let summary = result.response.text().trim();
-      
-      // Ensure summary isn't too long
+      let raw = result.response.text().trim();
+
+      // Strip markdown fences if the model added them
+      raw = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
+
+      let parsed;
+      try {
+        parsed = JSON.parse(raw);
+      } catch (parseError) {
+        console.warn('Could not parse JSON from summary/imagePrompt response:', raw);
+        // Fallback: treat whole text as summary, no imagePrompt
+        const fallbackSummary = raw.length > AI_CONFIG.SUMMARY_MAX_LENGTH
+          ? raw.substring(0, AI_CONFIG.SUMMARY_MAX_LENGTH) + '...'
+          : raw;
+        return { summary: fallbackSummary, imagePrompt: null };
+      }
+
+      let summary = (parsed.summary || '').trim();
+      let imagePrompt = (parsed.imagePrompt || '').trim();
+
+      if (!summary) {
+        summary = article.description || article.combinedDescription || article.title || '';
+      }
+
       if (summary.length > AI_CONFIG.SUMMARY_MAX_LENGTH) {
         summary = summary.substring(0, AI_CONFIG.SUMMARY_MAX_LENGTH) + '...';
       }
-      
-      return summary;
+
+      if (!imagePrompt || imagePrompt.length < 3) {
+        imagePrompt = null;
+      }
+
+      return { summary, imagePrompt };
     } catch (error) {
-      console.error('Error generating summary:', error);
-      return article.description;
+      console.error('Error generating summary and image prompt:', error);
+      return {
+        summary: article.description || article.combinedDescription || article.title || '',
+        imagePrompt: null,
+      };
     }
   }
 
@@ -253,9 +288,13 @@ Daily Life Impact:`;
       console.log(`Detecting category: ${article.title.substring(0, 50)}...`);
       result.category = await this.detectCategory(article);
 
-      // Step 3: Generate summary
-      console.log(`Generating summary: ${article.title.substring(0, 50)}...`);
-      result.summary = await this.generateSummary({ ...article, category: result.category });
+      // Step 3: Generate summary + image prompt in a single call
+      console.log(`Generating summary and image prompt: ${article.title.substring(0, 50)}...`);
+      const { summary, imagePrompt } = await this.generateSummaryAndImagePrompt({
+        ...article,
+        category: result.category,
+      });
+      result.summary = summary;
 
       // Step 4: Generate daily life impact (skip for sports/entertainment unless significant)
       if (result.qualityScore >= 6 || !['sports', 'entertainment'].includes(result.category)) {
@@ -266,8 +305,15 @@ Daily Life Impact:`;
         );
       }
 
-      // Step 5: Generate image keywords
-      result.imageKeywords = await this.generateImageKeywords({ ...article, category: result.category });
+      // Step 5: Generate image keywords (prefer imagePrompt if available)
+      if (imagePrompt) {
+        result.imageKeywords = imagePrompt;
+      } else {
+        result.imageKeywords = await this.generateImageKeywords({
+          ...article,
+          category: result.category,
+        });
+      }
 
       // Mark as ready to publish
       result.shouldPublish = true;

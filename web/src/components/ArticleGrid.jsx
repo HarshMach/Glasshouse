@@ -1,3 +1,6 @@
+import { SlLike } from "react-icons/sl";
+import { FaRegComment } from "react-icons/fa";
+
 export default function ArticleGrid({ articles, onSelect }) {
   if (!articles || articles.length === 0) {
     return (
@@ -7,53 +10,83 @@ export default function ArticleGrid({ articles, onSelect }) {
     );
   }
 
+  // Function to format date as "23 May" or "23 Jan"
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      day: 'numeric',
+      month: 'short'
+    });
+  };
+
   return (
     <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {articles.map((article) => (
         <button
           key={article.id}
           onClick={() => onSelect(article)}
-          className="glass-card flex flex-col overflow-hidden text-left transition hover:border-glass-accent/50 hover:shadow-glass-accent/40"
+          className="flex flex-col overflow-hidden text-left transition-colors"
         >
-          {article.stockImage?.thumbnail || article.imageUrl ? (
-            <div className="h-40 w-full overflow-hidden">
-              <img
-                src={article.stockImage?.thumbnail || article.imageUrl}
-                alt={article.title}
-                className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
-              />
+          {/* Image container - full width square with title ON the image */}
+          <div className="relative w-full aspect-square overflow-hidden">
+            {article.stockImage?.thumbnail || article.imageUrl ? (
+              <>
+                {/* Dark overlay */}
+                <div className="absolute inset-0 bg-black/60 z-10"></div>
+                <img
+                  src={article.stockImage?.thumbnail || article.imageUrl}
+                  alt={article.title}
+                  className="w-full h-full object-cover"
+                />
+              </>
+            ) : (
+              // Dark grey background when no image
+              <div className="w-full h-full bg-gray-600 flex items-center justify-center">
+                <span className="text-gray-500 text-sm">No Image</span>
+              </div>
+            )}
+            
+            {/* Title ON the image, positioned at the bottom */}
+            <div className="absolute bottom-0 left-0 right-0 z-20 p-4 bg-gradient-to-t from-black/80 to-transparent">
+              <h3 className="text-white font-semibold text-xl leading-tight">
+                {article.title}
+              </h3>
             </div>
-          ) : null}
-
-          <div className="flex flex-1 flex-col gap-2 p-4">
-            <div className="flex items-center justify-between gap-2 text-xs text-slate-400">
-              <span className="rounded-full border border-slate-700 px-2 py-0.5 uppercase tracking-wide">
+            
+            {/* Category at top */}
+            <div className="absolute top-0 left-0 right-0 z-20 p-4">
+              <h3 className="px-2 py-1 uppercase tracking-wide text-xs text-gray-300">
                 {article.category || 'General'}
-              </span>
-              <span>
+              </h3>
+            </div>
+          </div>
+
+          {/* Content below image */}
+          <div className="flex flex-col gap-2 p-3">
+            {/* First row: Source on left, engagement on right */}
+            <div className="flex items-center justify-between">
+             
+              <div className="flex items-center gap-4 text-xs text-white">
+                <div className="flex items-center gap-1">
+                  <SlLike className="w-3 h-3" />
+                  <span>{article.likes ?? 0}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <FaRegComment className="w-3 h-3" />
+                  <span>{article.commentCount ?? 0}</span>
+                </div>
+                
+              </div>
+               <span className="text-xs text-[#B8FF4D] uppercase tracking-wide truncate">
                 {article.source || (article.sources && article.sources[0]) || 'Unknown source'}
               </span>
             </div>
 
-            <h3 className="line-clamp-2 text-sm font-semibold text-slate-50">
-              {article.title}
-            </h3>
-
-            <p className="line-clamp-3 text-xs text-slate-400">
-              {article.summary}
-            </p>
-
-            <div className="mt-auto flex items-center justify-between pt-3 text-xs text-slate-500">
-              <div className="flex items-center gap-3">
-                <span>❤ {article.likes ?? 0}</span>
-                <span>💬 {article.commentCount ?? 0}</span>
-                <span>👁 {article.views ?? 0}</span>
-              </div>
-              <span>
-                {article.pubDate
-                  ? new Date(article.pubDate).toLocaleDateString()
-                  : ''}
-              </span>
+            {/* Second row: Views on left, date on right */}
+            <div className="flex items-center justify-between gap-2 text-xs text-gray-400">
+          <span>{article.views ?? 0} views</span>
+               <span>{formatDate(article.pubDate)}</span>
             </div>
           </div>
         </button>
