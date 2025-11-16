@@ -4,32 +4,32 @@
 
 /* Satoshi Font Definitions */
 @font-face {
-  font-family: 'Satoshi';
-  src: url('./OTF/Satoshi-Regular.otf') format('opentype');
+  font-family: "Satoshi";
+  src: url("./OTF/Satoshi-Regular.otf") format("opentype");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Satoshi';
-  src: url('./OTF/Satoshi-Medium.otf') format('opentype');
+  font-family: "Satoshi";
+  src: url("./OTF/Satoshi-Medium.otf") format("opentype");
   font-weight: 500;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Satoshi';
-  src: url('./OTF/Satoshi-Bold.otf') format('opentype');
+  font-family: "Satoshi";
+  src: url("./OTF/Satoshi-Bold.otf") format("opentype");
   font-weight: 700;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Satoshi';
-  src: url('./OTF/Satoshi-Black.otf') format('opentype');
+  font-family: "Satoshi";
+  src: url("./OTF/Satoshi-Black.otf") format("opentype");
   font-weight: 900;
   font-style: normal;
   font-display: swap;
@@ -59,6 +59,21 @@ body {
   /* Firefox */
 }
 
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari and Opera */
+}
+
+/* Optional: Apply to specific elements */
+html,
+body {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
   /* Chrome, Safari and Opera */

@@ -4,12 +4,12 @@
 
 // Firestore Collections
 const COLLECTIONS = {
-  ARTICLES: 'articles',
-  COMMENTS: 'comments',
-  REPORTS: 'reports',
-  RATE_LIMITS: 'rate_limits',
-  CIRCUIT_BREAKER: 'circuit_breaker_state',
-  ENGAGEMENT_METRICS: 'engagement_metrics',
+  ARTICLES: "articles",
+  COMMENTS: "comments",
+  REPORTS: "reports",
+  RATE_LIMITS: "rate_limits",
+  CIRCUIT_BREAKER: "circuit_breaker_state",
+  ENGAGEMENT_METRICS: "engagement_metrics",
 };
 
 // Processing limits
@@ -47,99 +47,94 @@ const AI_CONFIG = {
   MIN_ARTICLE_QUALITY_SCORE: 3, // Out of 10
   SUMMARY_MAX_LENGTH: 300,
   IMPACT_MAX_LENGTH: 200,
-  MODEL_NAME: 'gemini-1.5-flash', // Using flash model for free tier
+  MODEL_NAME: "gemini-1.5-flash", // Using flash model for free tier
 };
 
 // Image settings
 const IMAGE_CONFIG = {
-  UNSPLASH_API_URL: 'https://api.unsplash.com/search/photos',
-  PEXELS_API_URL: 'https://api.pexels.com/v1/search',
+  UNSPLASH_API_URL: "https://api.unsplash.com/search/photos",
+  PEXELS_API_URL: "https://api.pexels.com/v1/search",
   DEFAULT_IMAGE_WIDTH: 800,
-  FALLBACK_QUERY: 'news',
+  FALLBACK_QUERY: "news",
 };
 
 // Categories
 const CATEGORIES = {
-  POLITICS: 'politics',
-  WORLD: 'world',
-  BUSINESS: 'business',
-  TECH: 'tech',
-  SCIENCE: 'science',
-  HEALTH: 'health',
-  SPORTS: 'sports',
-  ENTERTAINMENT: 'entertainment',
-  GENERAL: 'general',
+  POLITICS: "politics",
+  WORLD: "world",
+  BUSINESS: "business",
+  TECH: "tech",
+  SCIENCE: "science",
 };
 
 // RSS Sources
 const RSS_SOURCES = [
   {
-    name: 'BBC World',
-    url: 'https://feeds.bbci.co.uk/news/world/rss.xml',
+    name: "BBC World",
+    url: "https://feeds.bbci.co.uk/news/world/rss.xml",
     category: CATEGORIES.WORLD,
-    priority: 'high',
+    priority: "high",
   },
   {
-    name: 'The Guardian World',
-    url: 'https://www.theguardian.com/world/rss',
+    name: "The Guardian World",
+    url: "https://www.theguardian.com/world/rss",
     category: CATEGORIES.WORLD,
-    priority: 'high',
+    priority: "high",
   },
   {
-    name: 'NY Times US',
-    url: 'https://rss.nytimes.com/services/xml/rss/nyt/US.xml',
+    name: "NY Times US",
+    url: "https://rss.nytimes.com/services/xml/rss/nyt/US.xml",
     category: CATEGORIES.POLITICS,
-    priority: 'high',
+    priority: "high",
   },
   {
-    name: 'Washington Post Politics',
-    url: 'https://www.washingtonpost.com/arcio/rss/category/politics/?itid=lk_inline_manual_2',
+    name: "Washington Post Politics",
+    url: "https://www.washingtonpost.com/arcio/rss/category/politics/?itid=lk_inline_manual_2",
     category: CATEGORIES.POLITICS,
-    priority: 'high',
+    priority: "high",
   },
   {
-    name: 'The Nation',
-    url: 'https://www.thenation.com/subject/politics/feed/',
+    name: "The Nation",
+    url: "https://www.thenation.com/subject/politics/feed/",
     category: CATEGORIES.POLITICS,
-    priority: 'high',
+    priority: "high",
   },
   {
-    name: 'Rolling Stone Politics',
-    url: 'https://www.rollingstone.com/politics/feed/',
+    name: "Rolling Stone Politics",
+    url: "https://www.rollingstone.com/politics/feed/",
     category: CATEGORIES.POLITICS,
-    priority: 'high',
+    priority: "high",
   },
   {
-    name: 'TechCrunch',
-    url: 'https://techcrunch.com/feed/',
+    name: "TechCrunch",
+    url: "https://techcrunch.com/feed/",
     category: CATEGORIES.TECH,
-    priority: 'high',
+    priority: "high",
   },
   {
-    name: 'The Verge',
-    url: 'https://www.theverge.com/rss/index.xml',
+    name: "The Verge",
+    url: "https://www.theverge.com/rss/index.xml",
     category: CATEGORIES.TECH,
-    priority: 'high',
+    priority: "high",
   },
   {
-    name: 'CNBC Business',
-    url: 'https://www.cnbc.com/id/100003114/device/rss/rss.html',
+    name: "CNBC Business",
+    url: "https://www.cnbc.com/id/100003114/device/rss/rss.html",
     category: CATEGORIES.BUSINESS,
-    priority: 'high',
+    priority: "high",
   },
   {
-    name: 'Bloomberg Markets',
-    url: 'https://feeds.bloomberg.com/markets/news.rss',
+    name: "Bloomberg Markets",
+    url: "https://feeds.bloomberg.com/markets/news.rss",
     category: CATEGORIES.BUSINESS,
-    priority: 'high',
+    priority: "high",
   },
   {
-    name: 'Science Daily',
-    url: 'https://www.sciencedaily.com/rss/top/science.xml',
+    name: "Science Daily",
+    url: "https://www.sciencedaily.com/rss/top/science.xml",
     category: CATEGORIES.SCIENCE,
-    priority: 'medium',
+    priority: "medium",
   },
- 
 ];
 
 module.exports = {
