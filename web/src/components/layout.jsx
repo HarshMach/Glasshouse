@@ -8,7 +8,7 @@ const Layout = ({
   currentCategory = 'all',
   activeTab = "recent",
     onTabChange,
-    bgColor = "bg-black" // default background
+
 }) => {
   return (
     <div className="flex min-h-screen scrollbar-hide">
@@ -39,9 +39,9 @@ const Layout = ({
       </aside>
 
       {/* Main Content Column */}
-      <main className={`flex-1 ${bgColor}`}>
+      <main className={`flex-1`}>
         {/* Top Navigation Bar */}
-        <nav className={`sticky top-0 z-40 ${bgColor} px-8 py-6 flex items-center justify-between`}>
+        <nav className={`sticky top-0 z-40  px-8 py-6 flex items-center justify-between`}>
           {/* Popular / Recent Tabs - Only show if onTabChange is provided */}
           {onTabChange && (
             <div className="flex space-x-8">
@@ -76,7 +76,7 @@ const Layout = ({
         </nav>
 
         {/* Content Area */}
-        <div className={`p-8 ${bgColor}`}>
+        <div className={`p-8 `}>
           {children}
         </div>
       </main>
