@@ -189,43 +189,134 @@ class StorageService {
    * Only returns AI-processed, quality articles that have both summary and dailyLifeImpact.
    * Results can be ordered by recency (newest first) or popularity (engagement-based).
    */
-  async getArticles(options = {}) {
-    const {
-      category = null,
-      sortBy = 'recent', // 'recent' or 'popular'
-      limit = 50,
-      startAfter = null,
-      searchQuery = null, // reserved for future server-side filtering
-    } = options;
+  /**
+ * Get articles with filters AND real Firestore pagination
+ */
+async getArticles(options = {}) {
+  const {
+    category = null,
+    sortBy = 'recent',
+    limit = 50,
+    cursor = null, // renamed from startAfter for clarity
+  } = options;
 
-    try {
+  try {
+    let query = this.db
+      .collection(COLLECTIONS.ARTICLES)
+      .where('processed', '==', true);
+
+    if (category && category !== 'all') {
+      query = query.where('category', '==', category);
+    }
+
+    // Base order for pagination
+    query = query.orderBy('pubDate', 'desc');
+
+    // Apply pagination cursor
+    if (cursor) {
+      const lastDoc = await this.db
+        .collection(COLLECTIONS.ARTICLES)
+        .doc(cursor)
+        .get();
+
+      if (lastDoc.exists) {
+        query = query.startAfter(lastDoc);
+      }
+    }
+
+    // Overfetch so AI filters don’t reduce results
+    query = query.limit(limit * 2);
+
+    const snapshot = await query.get();
+    const rawDocs = snapshot.docs;
+
+    const articles = [];
+
+    for (const doc of rawDocs) {
+      const data = doc.data();
+
+      // Skip invalid content
+      if (!data.summary) continue;
+      if (data.category?.toLowerCase() === 'sports') continue;
+
+      articles.push({
+        id: doc.id,
+        ...data,
+        pubDate: data.pubDate?.toDate().toISOString(),
+        fetchedAt: data.fetchedAt?.toDate().toISOString(),
+        processedAt: data.processedAt?.toDate().toISOString(),
+      });
+
+      // Stop once clean limit reached
+      if (articles.length >= limit) break;
+    }
+
+    // Sorting logic
+    if (sortBy === 'popular') {
+      articles.sort((a, b) => {
+        const engagementA =
+          (a.likes || 0) * 3 +
+          (a.commentCount || 0) * 2 +
+          (a.views || 0) * 0.1;
+
+        const engagementB =
+          (b.likes || 0) * 3 +
+          (b.commentCount || 0) * 2 +
+          (b.views || 0) * 0.1;
+
+        return engagementB - engagementA;
+      });
+    } else {
+      articles.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+    }
+
+    // Determine next cursor
+    const lastVisibleDoc = rawDocs[rawDocs.length - 1];
+    const nextCursor = lastVisibleDoc ? lastVisibleDoc.id : null;
+
+    return {
+      articles,
+      nextCursor,
+    };
+
+  } catch (error) {
+    console.error('Error getting articles:', error);
+    throw error;
+  }
+}
+/**
+ * Get articles with proper pagination support
+ * This is the public-facing method that should be called from the API endpoint
+ */
+async getArticlesPaginated({ category = 'all', sortBy = 'recent', limit = 20, cursor = null } = {}) {
+  try {
+    const articles = [];
+    let lastDoc = cursor ? await this.db.collection(COLLECTIONS.ARTICLES).doc(cursor).get() : null;
+    let keepFetching = true;
+
+    while (keepFetching && articles.length < limit) {
       let query = this.db
         .collection(COLLECTIONS.ARTICLES)
-        .where('processed', '==', true) // Only show processed articles
-        .orderBy('pubDate', 'desc'); // Most recent first
+        .where('processed', '==', true)
+        .orderBy('pubDate', 'desc')
+        .limit(limit * 2); // Overfetch
 
       if (category && category !== 'all') {
         query = query.where('category', '==', category);
       }
 
-      if (startAfter) {
-        query = query.startAfter(startAfter);
+      if (lastDoc && lastDoc.exists) {
+        query = query.startAfter(lastDoc);
       }
 
-      query = query.limit(limit * 2); // overfetch a bit so we can filter by impact/summary
-
       const snapshot = await query.get();
-      const articles = [];
+      if (snapshot.empty) break;
 
-      snapshot.forEach((doc) => {
+      for (const doc of snapshot.docs) {
         const data = doc.data();
 
-        // Enforce that only articles with a summary are returned
-        // (dailyLifeImpact is optional so we still show useful content)
-        // Also filter out sports articles
-        if (!data.summary || data.category?.toLowerCase() === 'sports') {
-          return;
-        }
+        // Skip invalid articles
+        if (!data.summary || data.category?.toLowerCase() === 'sports') continue;
 
         articles.push({
           id: doc.id,
@@ -234,27 +325,40 @@ class StorageService {
           fetchedAt: data.fetchedAt?.toDate().toISOString(),
           processedAt: data.processedAt?.toDate().toISOString(),
         });
-      });
 
-      // Sort articles based on sortBy parameter
-      if (sortBy === 'popular') {
-        // Sort by engagement: combination of likes, comments, and views
-        articles.sort((a, b) => {
-          const engagementA = (a.likes || 0) * 3 + (a.commentCount || 0) * 2 + (a.views || 0) * 0.1;
-          const engagementB = (b.likes || 0) * 3 + (b.commentCount || 0) * 2 + (b.views || 0) * 0.1;
-          return engagementB - engagementA;
-        });
-      } else {
-        // Default: Sort by recency (newest first)
-        articles.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+        if (articles.length >= limit) break;
       }
 
-      return articles.slice(0, limit);
-    } catch (error) {
-      console.error('Error getting articles:', error);
-      throw error;
+      lastDoc = snapshot.docs[snapshot.docs.length - 1];
+
+      // Stop fetching if no more documents
+      if (!lastDoc || snapshot.docs.length === 0) keepFetching = false;
     }
+
+    // Sort by popularity if requested
+    if (sortBy === 'popular') {
+      articles.sort((a, b) => {
+        const engagementA = (a.likes || 0) * 3 + (a.commentCount || 0) * 2 + (a.views || 0) * 0.1;
+        const engagementB = (b.likes || 0) * 3 + (b.commentCount || 0) * 2 + (b.views || 0) * 0.1;
+        return engagementB - engagementA;
+      });
+    }
+
+    const nextCursor = lastDoc && articles.length >= limit ? lastDoc.id : null;
+
+    return {
+      articles,
+      nextCursor,
+      hasMore: !!nextCursor,
+      count: articles.length,
+    };
+
+  } catch (error) {
+    console.error('Error getting paginated articles:', error);
+    throw error;
   }
+}
+
 
   /**
    * Search articles with fuzzy matching

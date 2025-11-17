@@ -12,13 +12,15 @@ async function handleResponse(res) {
   return res.json();
 }
 
-export async function getArticles({ category = 'all', sortBy = 'recent', limit = 50 } = {}) {
+export async function getArticles({ category = 'all', sortBy = 'recent', limit = 20, cursor = null } = {}) {
   const url = new URL(`${API_BASE}/getArticles`);
   url.searchParams.set('category', category);
   url.searchParams.set('sortBy', sortBy);
   url.searchParams.set('limit', String(limit));
+  if (cursor) url.searchParams.set('cursor', cursor);
+
   const res = await fetch(url.toString(), { cache: 'no-store' });
-  return handleResponse(res);
+  return handleResponse(res); // Should return { articles: [...], nextCursor: "..." }
 }
 
 export async function searchArticles(query, limit = 50) {

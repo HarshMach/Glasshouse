@@ -6,7 +6,7 @@ const About = () => {
  
   return (
     <Layout>
-      {/* Back to Home */}
+     
    
         
   

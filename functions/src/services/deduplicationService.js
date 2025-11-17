@@ -17,6 +17,45 @@ class DeduplicationService {
     }
 
     try {
+      // ---------------------------------------
+      // STEP 1: Remove exact duplicate titles
+      // ---------------------------------------
+      const uniqueByTitleExact = new Map();
+      articles.forEach((article) => {
+        const titleKey = article.title.trim().toLowerCase();
+        if (!uniqueByTitleExact.has(titleKey)) {
+          uniqueByTitleExact.set(titleKey, article);
+        }
+      });
+      articles = Array.from(uniqueByTitleExact.values());
+
+      // ----------------------------------------------------------
+      // STEP 2: Remove near-duplicate titles (98%+)
+      // ----------------------------------------------------------
+      const MIN_TITLE_SIMILARITY = 0.98;
+      const uniqueByTitleFuzzy = [];
+
+      articles.forEach((current) => {
+        const isDuplicate = uniqueByTitleFuzzy.some((existing) => {
+          return (
+            stringSimilarity.compareTwoStrings(
+              current.title.toLowerCase(),
+              existing.title.toLowerCase()
+            ) >= MIN_TITLE_SIMILARITY
+          );
+        });
+
+        if (!isDuplicate) {
+          uniqueByTitleFuzzy.push(current);
+        }
+      });
+
+      articles = uniqueByTitleFuzzy;
+
+      // ---------------------------------------
+      // STEP 3: Group similar articles based on keywords and time window
+      // ---------------------------------------
+
       // Sort by date (newest first)
       const sortedArticles = [...articles].sort((a, b) => b.pubDate - a.pubDate);
 
@@ -42,7 +81,7 @@ class DeduplicationService {
         for (const { article, index } of bucket) {
           if (processed.has(index)) continue;
 
-          // Create a new group with this article
+          // Create a new merged group
           const group = {
             ...article,
             sources: [article.source],
@@ -63,7 +102,7 @@ class DeduplicationService {
             );
             if (timeDiff > timeWindow) continue;
 
-            // Calculate title similarity
+            // Title similarity matching 
             const titleSimilarity = stringSimilarity.compareTwoStrings(
               article.title.toLowerCase(),
               otherArticle.title.toLowerCase()
@@ -87,7 +126,7 @@ class DeduplicationService {
                 group.description = otherArticle.description;
               }
 
-              // Keep first image found
+              // Keep first available image
               if (!group.imageUrl && otherArticle.imageUrl) {
                 group.imageUrl = otherArticle.imageUrl;
               }
@@ -106,7 +145,9 @@ class DeduplicationService {
         }
       }
 
-      console.log(`Deduplicated ${articles.length} articles into ${groups.length} groups`);
+      console.log(
+        `Deduplicated ${articles.length} articles into ${groups.length} groups`
+      );
       return groups;
     } catch (error) {
       console.error('Error in deduplicateArticles:', error);

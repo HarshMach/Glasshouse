@@ -50,7 +50,7 @@ export default function ArticleGrid({ articles, onSelect }) {
 
             {/* Title ON the image, positioned at the bottom */}
             <div className="absolute bottom-0 left-0 right-0 z-20 p-4 bg-gradient-to-t from-black/80 to-transparent">
-              <h3 className="text-white font-semibold text-xl leading-tight">
+              <h3 className="text-white font-semibold text-2xl leading-tight">
                 {article.title}
               </h3>
             </div>

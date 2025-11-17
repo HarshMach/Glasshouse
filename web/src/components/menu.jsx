@@ -106,8 +106,8 @@ const Menu = ({ onCategoryChange, currentCategory = 'all' }) => {
                   {currentCategory === category.id && (
                     <button
   onClick={handleReset}
-  className="absolute right-4 top-1/3 -translate-y-1/2 text-[#FF6A00] 
-             text-[150px] font-light hover:text-[#f97517] transition-colors z-30"
+  className="absolute right-3 top-[50%] -translate-y-1/2 text-[#FF6A00] 
+             text-[100px] font-extralight hover:text-[#f97517] transition-colors z-30"
   aria-label="Reset to all categories"
 >
   ×

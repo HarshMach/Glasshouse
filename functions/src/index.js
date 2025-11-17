@@ -253,10 +253,13 @@ exports.processArticles = onRequest(
 /**
  * Get articles with optional category filter
  */
+// ========== GET ARTICLES (PUBLIC) ==========
+/**
+ * Get articles with optional category filter, sorting, and pagination
+ */
 exports.getArticles = onRequest(
   { memory: '256MiB', timeoutSeconds: 60, cors: true },
   async (req, res) => {
-    // CORS headers
     res.set('Access-Control-Allow-Origin', '*');
     res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
     res.set('Access-Control-Allow-Headers', 'Content-Type');
@@ -268,26 +271,32 @@ exports.getArticles = onRequest(
 
     try {
       const category = req.query.category || 'all';
-      const sortBy = req.query.sortBy || 'recent'; // 'recent' or 'popular'
-      const limit = Math.min(parseInt(req.query.limit) || 50, 100);
+      const sortBy = req.query.sortBy || 'recent';
+      const limit = Math.min(parseInt(req.query.limit) || 20, 50);
+      const cursor = req.query.cursor || null;
 
-      const articles = await storageService.getArticles({ category, sortBy, limit });
+      const result = await storageService.getArticlesPaginated({
+        category,
+        sortBy,
+        limit,
+        cursor
+      });
 
       res.json({
         success: true,
-        count: articles.length,
-        articles,
-        timestamp: new Date().toISOString(),
+        ...result,
       });
+
     } catch (error) {
-      console.error('Error fetching articles:', error);
-      res.status(500).json({
-        success: false,
-        error: error.message,
+      console.error('Error in getArticles:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message 
       });
     }
   }
 );
+
 
 // ========== SEARCH ARTICLES (PUBLIC) ==========
 /**
