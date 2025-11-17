@@ -1,59 +1,11 @@
-// index.js — Simplified Version (Only Essential Fields)
-const { onRequest } = require("firebase-functions/v2/https");
-const { onSchedule } = require("firebase-functions/v2/scheduler");
-const { setGlobalOptions } = require("firebase-functions/v2");
-const admin = require("firebase-admin");
-const Parser = require("rss-parser");
-const stringSimilarity = require("string-similarity");
-const crypto = require("crypto");
-const { URL } = require("url");
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+// Cloud Functions entrypoint
+// This file simply re-exports all functions from the modular Vertex-based implementation
+// located in src/index.js.
+//
+// Having this shim ensures Firebase (which expects functions/index.js) loads the
+// correct implementation without using the legacy Gemini API key-based code.
 
-// Initialize Firebase Admin
-if (!admin.apps.length) {
-  try {
-    admin.initializeApp();
-  } catch (error) {
-    console.error("Failed to initialize Firebase Admin:", error);
-    process.exit(1);
-  }
-}
-
-setGlobalOptions({
-  region: "us-central1",
-  maxInstances: 10,
-});
-
-const db = admin.firestore();
-const parser = new Parser();
-
-// ========== CONFIG CONSTANTS ==========
-const BATCH_SIZE_LIMIT = 499;
-const SIMILARITY_THRESHOLD = 0.5;
-const MAX_PROCESSING_TIME = 540000;
-const ARTICLE_RETENTION_DAYS = 30;
-const API_KEY_HEADER = "x-api-key";
-
-const CIRCUIT_BREAKER_COLLECTION = "circuit_breaker_state";
-const CIRCUIT_FAILURE_THRESHOLD = 3;
-const CIRCUIT_TIMEOUT_MS = 3600000;
-
-const RATE_LIMIT_COLLECTION = "rate_limits";
-const MAX_REQUESTS_PER_HOUR = 100;
-const RATE_LIMIT_WINDOW_MS = 3600000;
-// Initialize Gemini AI
-const GEMINI_API_KEY = "AIzaSyCmJG_IAJKVWBYNDk5ISHuQecPRG6KQ7Tw";
-const genAI = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
-
-// Health check endpoint - required for Cloud Run
-exports.health = onRequest(
-  { memory: "128MiB", timeoutSeconds: 60 },
-  async (req, res) => {
-    res
-      .status(200)
-      .json({ status: "healthy", timestamp: new Date().toISOString() });
-  }
-);
+module.exports = require("./src/index.js");
 
 const RSS_SOURCES = [
   {

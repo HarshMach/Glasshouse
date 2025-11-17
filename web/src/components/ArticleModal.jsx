@@ -177,7 +177,9 @@ export default function ArticleModal({ article, onClose }) {
                   Why this <br /> concerns you?
                 </h2>
                 <p className="mt-4 text-sm text-slate-300 whitespace-pre-line">
-                  {article.summary}
+                  {article.dailyLifeImpact ||
+                    article.daily_life_impact ||
+                    article.summary}
                 </p>
               </div>
             </div>

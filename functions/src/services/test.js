@@ -1,9 +1,9 @@
 // testAIService.js
 import AIService from '../services/aiService.js';
-import 'dotenv/config';
+const functions = require('firebase-functions');
 
 // Replace with your real Gemini API key
-const apiKey = process.env.GEMINI_API_KEY;
+const apiKey = functions.config().gemini?.key;
 
 async function test() {
   if (!apiKey) {

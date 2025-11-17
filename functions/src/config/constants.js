@@ -25,9 +25,10 @@ const LIMITS = {
 // Rate limiting
 const RATE_LIMITING = {
   MAX_REQUESTS_PER_HOUR: 100,
-  RATE_LIMIT_WINDOW_MS: 3600000, // 1 hour
-  GEMINI_REQUESTS_PER_MINUTE: 15, // Free tier limit
-  GEMINI_DELAY_MS: 4000, // Delay between Gemini calls
+  RATE_LIMIT_WINDOW_MS: 3600000,
+  GEMINI_REQUESTS_PER_MINUTE: 2000, // Paid Tier 1 limit
+  GEMINI_DELAY_MS: 500, // Much faster
+  // Remove GEMINI_DAILY_REQUESTS and GEMINI_DAILY_RESET_HOUR - no daily limit on paid tier
 };
 
 // Circuit breaker
@@ -47,7 +48,7 @@ const AI_CONFIG = {
   MIN_ARTICLE_QUALITY_SCORE: 3, // Out of 10
   SUMMARY_MAX_LENGTH: 1500,
   IMPACT_MAX_LENGTH: 1500,
-  MODEL_NAME: "gemini-2.0-flash", // Using flash model for free tier
+  MODEL_NAME: "gemini-1.5-flash", // Using flash model for free tier
 };
 
 // Image settings

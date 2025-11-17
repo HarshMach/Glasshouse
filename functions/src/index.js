@@ -3,10 +3,11 @@
  * Main entry point for all Firebase Cloud Functions
  */
 
-const { onRequest } = require('firebase-functions/v2/https');
-const { onSchedule } = require('firebase-functions/v2/scheduler');
-const { setGlobalOptions } = require('firebase-functions/v2');
-const admin = require('firebase-admin');
+const { onRequest } = require("firebase-functions/v2/https");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
+const { setGlobalOptions } = require("firebase-functions/v2");
+const { defineString } = require("firebase-functions/params");
+const admin = require("firebase-admin");
 
 // Initialize Firebase Admin
 if (!admin.apps.length) {
@@ -14,39 +15,70 @@ if (!admin.apps.length) {
 }
 
 setGlobalOptions({
-  region: 'us-central1',
+  region: "us-central1",
   maxInstances: 10,
 });
 
 const db = admin.firestore();
 
 // Import services
-const RSSService = require('./services/rssService');
-const AIService = require('./services/aiService');
-const ImageService = require('./services/imageService');
-const DeduplicationService = require('./services/deduplicationService');
-const StorageService = require('./services/storageService');
-const { verifyApiKey, getClientIp } = require('./utils/helpers');
-const { LIMITS, COLLECTIONS } = require('./config/constants');
+const RSSService = require("./services/rssService");
+const AIService = require("./services/aiService");
+const ImageService = require("./services/imageService");
+const DeduplicationService = require("./services/deduplicationService");
+const StorageService = require("./services/storageService");
+const { verifyApiKey, getClientIp } = require("./utils/helpers");
+const { LIMITS, COLLECTIONS } = require("./config/constants");
 
 // Initialize services
 const rssService = new RSSService(db);
 const storageService = new StorageService(db, admin);
 
-// Environment variables
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const UNSPLASH_API_KEY = process.env.UNSPLASH_API_KEY;
-const PEXELS_API_KEY = process.env.PEXELS_API_KEY;
-const API_KEY = process.env.API_KEY;
+// Environment variables & runtime config
+// Project ID is automatically injected in Cloud Functions
+const PROJECT_ID =
+  process.env.GCLOUD_PROJECT ||
+  process.env.GCP_PROJECT ||
+  process.env.GOOGLE_CLOUD_PROJECT;
+
+// Environment configuration using Firebase params API with env var fallback
+const UNSPLASH_API_KEY_PARAM = defineString("UNSPLASH_API_KEY");
+const PEXELS_API_KEY_PARAM = defineString("PEXELS_API_KEY");
+const API_KEY_PARAM = defineString("API_KEY");
+const APP_API_KEY_PARAM = defineString("APP_API_KEY");
+const BRAVE_API_KEY_PARAM = defineString("BRAVE_API_KEY");
+
+const UNSPLASH_API_KEY =
+  UNSPLASH_API_KEY_PARAM.value() ||
+  process.env.UNSPLASH_API_KEY ||
+  null;
+
+const PEXELS_API_KEY =
+  PEXELS_API_KEY_PARAM.value() ||
+  process.env.PEXELS_API_KEY ||
+  null;
+
+// Admin/API key used to protect manual endpoints
+const API_KEY =
+  API_KEY_PARAM.value() ||
+  APP_API_KEY_PARAM.value() ||
+  process.env.API_KEY ||
+  process.env.APP_API_KEY ||
+  null;
+
+const BRAVE_KEY =
+  BRAVE_API_KEY_PARAM.value() ||
+  process.env.BRAVE_API_KEY ||
+  null;
 
 // ========== HEALTH CHECK ==========
 exports.health = onRequest(
-  { memory: '128MiB', timeoutSeconds: 10 },
+  { memory: "128MiB", timeoutSeconds: 10 },
   async (req, res) => {
     res.status(200).json({
-      status: 'healthy',
+      status: "healthy",
       timestamp: new Date().toISOString(),
-      version: '2.0.0',
+      version: "2.0.0",
     });
   }
 );
@@ -56,12 +88,12 @@ exports.health = onRequest(
  * Manually trigger RSS feed fetching
  */
 exports.fetchNews = onRequest(
-  { memory: '512MiB', timeoutSeconds: 540 },
+  { memory: "512MiB", timeoutSeconds: 540 },
   async (req, res) => {
     if (!verifyApiKey(req, API_KEY)) {
       return res.status(401).json({
         success: false,
-        error: 'Unauthorized - Invalid API key',
+        error: "Unauthorized - Invalid API key",
       });
     }
 
@@ -71,7 +103,7 @@ exports.fetchNews = onRequest(
 
     try {
       // Step 1: Fetch from RSS feeds
-      console.log('Step 1: Fetching from RSS feeds...');
+      console.log("Step 1: Fetching from RSS feeds...");
       const allArticles = await rssService.fetchAllArticles();
       console.log(`Fetched ${allArticles.length} articles from RSS feeds`);
 
@@ -81,22 +113,29 @@ exports.fetchNews = onRequest(
           operationId,
           articlesProcessed: 0,
           articlesSaved: 0,
-          message: 'No articles fetched',
+          message: "No articles fetched",
           processingTime: Date.now() - startTime,
         });
       }
 
       // Step 2: Deduplicate articles
-      console.log('Step 2: Deduplicating articles...');
-      const deduplicatedArticles = DeduplicationService.deduplicateArticles(allArticles);
-      console.log(`Deduplicated to ${deduplicatedArticles.length} unique articles`);
+      console.log("Step 2: Deduplicating articles...");
+      const deduplicatedArticles =
+        DeduplicationService.deduplicateArticles(allArticles);
+      console.log(
+        `Deduplicated to ${deduplicatedArticles.length} unique articles`
+      );
 
       // Step 3: Save to Firestore
-      console.log('Step 3: Saving to Firestore...');
-      const saveResult = await storageService.saveArticles(deduplicatedArticles);
+      console.log("Step 3: Saving to Firestore...");
+      const saveResult = await storageService.saveArticles(
+        deduplicatedArticles
+      );
 
       const processingTime = Date.now() - startTime;
-      console.log(`News fetch operation ${operationId} completed in ${processingTime}ms`);
+      console.log(
+        `News fetch operation ${operationId} completed in ${processingTime}ms`
+      );
 
       res.json({
         success: true,
@@ -109,7 +148,7 @@ exports.fetchNews = onRequest(
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
-      console.error('Error in fetchNews:', error);
+      console.error("Error in fetchNews:", error);
       res.status(500).json({
         success: false,
         error: error.message,
@@ -124,30 +163,24 @@ exports.fetchNews = onRequest(
  * Process articles with AI (quality check, categorization, summary, impact)
  */
 exports.processArticles = onRequest(
-  { memory: '1GiB', timeoutSeconds: 540 },
+  { memory: "1GiB", timeoutSeconds: 540 },
   async (req, res) => {
     if (!verifyApiKey(req, API_KEY)) {
       return res.status(401).json({
         success: false,
-        error: 'Unauthorized - Invalid API key',
+        error: "Unauthorized - Invalid API key",
       });
     }
 
-    if (!GEMINI_API_KEY) {
-      return res.status(500).json({
-        success: false,
-        error: 'Gemini API key not configured',
-        message: 'Set GEMINI_API_KEY environment variable',
-      });
-    }
+    // Initialize AI and image services once per invocation
+    const aiService = new AIService(PROJECT_ID);
+    const imageService = new ImageService(UNSPLASH_API_KEY, PEXELS_API_KEY);
 
     const operationId = `processArticles_${Date.now()}`;
     console.log(`Starting AI processing operation: ${operationId}`);
     const startTime = Date.now();
 
     try {
-      const aiService = new AIService(GEMINI_API_KEY);
-      const imageService = new ImageService(UNSPLASH_API_KEY, PEXELS_API_KEY);
 
       // Get unprocessed articles
       const articles = await storageService.getUnprocessedArticles(
@@ -155,11 +188,11 @@ exports.processArticles = onRequest(
       );
 
       if (articles.length === 0) {
-        console.log('No unprocessed articles found');
+        console.log("No unprocessed articles found");
         return res.json({
           success: true,
           processed: 0,
-          message: 'No articles to process',
+          message: "No articles to process",
           timestamp: new Date().toISOString(),
         });
       }
@@ -185,15 +218,28 @@ exports.processArticles = onRequest(
 
             if (!aiResult.shouldPublish) {
               skippedCount++;
-              console.log(`❌ Skipped low-quality article: ${article.title.substring(0, 50)}...`);
-              
-              // Mark as processed but don't publish
-              await article.ref.update({
+              console.log(
+                `❌ Skipped low-quality article: ${article.title.substring(
+                  0,
+                  50
+                )}...`
+              );
+
+              // Mark as processed but include AI fields even for low-quality articles
+              const updateData = {
                 processed: true,
                 qualityScore: aiResult.qualityScore,
                 qualityReason: aiResult.qualityReason,
                 processedAt: admin.firestore.FieldValue.serverTimestamp(),
-              });
+              };
+
+              // Include AI-generated content even for low-quality articles
+              if (aiResult.summary) updateData.summary = aiResult.summary;
+              if (aiResult.dailyLifeImpact)
+                updateData.dailyLifeImpact = aiResult.dailyLifeImpact;
+              if (aiResult.category) updateData.category = aiResult.category;
+
+              await article.ref.update(updateData);
               continue;
             }
 
@@ -207,7 +253,11 @@ exports.processArticles = onRequest(
             }
 
             // Update article with AI results
-            await storageService.updateArticleWithAI(article.ref, aiResult, imageData);
+            await storageService.updateArticleWithAI(
+              article.ref,
+              aiResult,
+              imageData
+            );
 
             processedCount++;
             console.log(`✅ Processed: ${article.title.substring(0, 50)}...`);
@@ -217,7 +267,10 @@ exports.processArticles = onRequest(
               articleId: article.id,
               error: error.message,
             });
-            console.error(`✗ Error processing article ${article.id}:`, error.message);
+            console.error(
+              `✗ Error processing article ${article.id}:`,
+              error.message
+            );
           }
         }
       }
@@ -235,11 +288,11 @@ exports.processArticles = onRequest(
         errors: errorCount,
         errorDetails: errors.length > 0 ? errors : undefined,
         processingTime,
-        message: 'AI processing completed',
+        message: "AI processing completed",
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
-      console.error('Error in processArticles:', error);
+      console.error("Error in processArticles:", error);
       res.status(500).json({
         success: false,
         error: error.message,
@@ -249,25 +302,24 @@ exports.processArticles = onRequest(
   }
 );
 
-
 /**
  * Get articles with optional category filter, sorting, and pagination
  */
 exports.getArticles = onRequest(
-  { memory: '256MiB', timeoutSeconds: 60, cors: true },
+  { memory: "256MiB", timeoutSeconds: 60, cors: true },
   async (req, res) => {
-    res.set('Access-Control-Allow-Origin', '*');
-    res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    res.set('Access-Control-Allow-Headers', 'Content-Type');
-    
-    if (req.method === 'OPTIONS') {
-      res.status(204).send('');
+    res.set("Access-Control-Allow-Origin", "*");
+    res.set("Access-Control-Allow-Methods", "GET, OPTIONS");
+    res.set("Access-Control-Allow-Headers", "Content-Type");
+
+    if (req.method === "OPTIONS") {
+      res.status(204).send("");
       return;
     }
 
     try {
-      const category = req.query.category || 'all';
-      const sortBy = req.query.sortBy || 'recent';
+      const category = req.query.category || "all";
+      const sortBy = req.query.sortBy || "recent";
       const limit = Math.min(parseInt(req.query.limit) || 20, 50);
       const cursor = req.query.cursor || null;
 
@@ -275,49 +327,46 @@ exports.getArticles = onRequest(
         category,
         sortBy,
         limit,
-        cursor
+        cursor,
       });
 
       res.json({
         success: true,
         ...result,
       });
-
     } catch (error) {
-      console.error('Error in getArticles:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: error.message 
+      console.error("Error in getArticles:", error);
+      res.status(500).json({
+        success: false,
+        error: error.message,
       });
     }
   }
 );
-
-
 
 // ========== ENGAGEMENT ENDPOINTS (PUBLIC) ==========
 /**
  * Track article view
  */
 exports.trackView = onRequest(
-  { memory: '128MiB', timeoutSeconds: 10, cors: true },
+  { memory: "128MiB", timeoutSeconds: 10, cors: true },
   async (req, res) => {
-    res.set('Access-Control-Allow-Origin', '*');
-    res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.set('Access-Control-Allow-Headers', 'Content-Type');
-    
-    if (req.method === 'OPTIONS') {
-      res.status(204).send('');
+    res.set("Access-Control-Allow-Origin", "*");
+    res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.set("Access-Control-Allow-Headers", "Content-Type");
+
+    if (req.method === "OPTIONS") {
+      res.status(204).send("");
       return;
     }
 
     try {
       const { articleId } = req.body;
-      
+
       if (!articleId) {
         return res.status(400).json({
           success: false,
-          error: 'articleId is required',
+          error: "articleId is required",
         });
       }
 
@@ -325,10 +374,10 @@ exports.trackView = onRequest(
 
       res.json({
         success: true,
-        message: 'View tracked',
+        message: "View tracked",
       });
     } catch (error) {
-      console.error('Error tracking view:', error);
+      console.error("Error tracking view:", error);
       res.status(500).json({
         success: false,
         error: error.message,
@@ -341,24 +390,24 @@ exports.trackView = onRequest(
  * Toggle like on article
  */
 exports.toggleLike = onRequest(
-  { memory: '128MiB', timeoutSeconds: 10, cors: true },
+  { memory: "128MiB", timeoutSeconds: 10, cors: true },
   async (req, res) => {
-    res.set('Access-Control-Allow-Origin', '*');
-    res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.set('Access-Control-Allow-Headers', 'Content-Type');
-    
-    if (req.method === 'OPTIONS') {
-      res.status(204).send('');
+    res.set("Access-Control-Allow-Origin", "*");
+    res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.set("Access-Control-Allow-Headers", "Content-Type");
+
+    if (req.method === "OPTIONS") {
+      res.status(204).send("");
       return;
     }
 
     try {
       const { articleId, userId } = req.body;
-      
+
       if (!articleId || !userId) {
         return res.status(400).json({
           success: false,
-          error: 'articleId and userId are required',
+          error: "articleId and userId are required",
         });
       }
 
@@ -369,7 +418,7 @@ exports.toggleLike = onRequest(
         ...result,
       });
     } catch (error) {
-      console.error('Error toggling like:', error);
+      console.error("Error toggling like:", error);
       res.status(500).json({
         success: false,
         error: error.message,
@@ -382,24 +431,24 @@ exports.toggleLike = onRequest(
  * Track share
  */
 exports.trackShare = onRequest(
-  { memory: '128MiB', timeoutSeconds: 10, cors: true },
+  { memory: "128MiB", timeoutSeconds: 10, cors: true },
   async (req, res) => {
-    res.set('Access-Control-Allow-Origin', '*');
-    res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.set('Access-Control-Allow-Headers', 'Content-Type');
-    
-    if (req.method === 'OPTIONS') {
-      res.status(204).send('');
+    res.set("Access-Control-Allow-Origin", "*");
+    res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.set("Access-Control-Allow-Headers", "Content-Type");
+
+    if (req.method === "OPTIONS") {
+      res.status(204).send("");
       return;
     }
 
     try {
       const { articleId } = req.body;
-      
+
       if (!articleId) {
         return res.status(400).json({
           success: false,
-          error: 'articleId is required',
+          error: "articleId is required",
         });
       }
 
@@ -407,10 +456,10 @@ exports.trackShare = onRequest(
 
       res.json({
         success: true,
-        message: 'Share tracked',
+        message: "Share tracked",
       });
     } catch (error) {
-      console.error('Error tracking share:', error);
+      console.error("Error tracking share:", error);
       res.status(500).json({
         success: false,
         error: error.message,
@@ -424,31 +473,31 @@ exports.trackShare = onRequest(
  * Add comment to article
  */
 exports.addComment = onRequest(
-  { memory: '128MiB', timeoutSeconds: 10, cors: true },
+  { memory: "128MiB", timeoutSeconds: 10, cors: true },
   async (req, res) => {
-    res.set('Access-Control-Allow-Origin', '*');
-    res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.set('Access-Control-Allow-Headers', 'Content-Type');
-    
-    if (req.method === 'OPTIONS') {
-      res.status(204).send('');
+    res.set("Access-Control-Allow-Origin", "*");
+    res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.set("Access-Control-Allow-Headers", "Content-Type");
+
+    if (req.method === "OPTIONS") {
+      res.status(204).send("");
       return;
     }
 
     try {
       const { articleId, userId, username, text } = req.body;
-      
+
       if (!articleId || !userId || !username || !text) {
         return res.status(400).json({
           success: false,
-          error: 'articleId, userId, username, and text are required',
+          error: "articleId, userId, username, and text are required",
         });
       }
 
       if (text.length < 1 || text.length > 500) {
         return res.status(400).json({
           success: false,
-          error: 'Comment must be between 1 and 500 characters',
+          error: "Comment must be between 1 and 500 characters",
         });
       }
 
@@ -461,10 +510,10 @@ exports.addComment = onRequest(
       res.json({
         success: true,
         commentId,
-        message: 'Comment added',
+        message: "Comment added",
       });
     } catch (error) {
-      console.error('Error adding comment:', error);
+      console.error("Error adding comment:", error);
       res.status(500).json({
         success: false,
         error: error.message,
@@ -477,25 +526,25 @@ exports.addComment = onRequest(
  * Get comments for article
  */
 exports.getComments = onRequest(
-  { memory: '128MiB', timeoutSeconds: 30, cors: true },
+  { memory: "128MiB", timeoutSeconds: 30, cors: true },
   async (req, res) => {
-    res.set('Access-Control-Allow-Origin', '*');
-    res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    res.set('Access-Control-Allow-Headers', 'Content-Type');
-    
-    if (req.method === 'OPTIONS') {
-      res.status(204).send('');
+    res.set("Access-Control-Allow-Origin", "*");
+    res.set("Access-Control-Allow-Methods", "GET, OPTIONS");
+    res.set("Access-Control-Allow-Headers", "Content-Type");
+
+    if (req.method === "OPTIONS") {
+      res.status(204).send("");
       return;
     }
 
     try {
       const articleId = req.query.articleId;
       const limit = Math.min(parseInt(req.query.limit) || 50, 100);
-      
+
       if (!articleId) {
         return res.status(400).json({
           success: false,
-          error: 'articleId is required',
+          error: "articleId is required",
         });
       }
 
@@ -507,7 +556,7 @@ exports.getComments = onRequest(
         comments,
       });
     } catch (error) {
-      console.error('Error getting comments:', error);
+      console.error("Error getting comments:", error);
       res.status(500).json({
         success: false,
         error: error.message,
@@ -522,23 +571,28 @@ exports.getComments = onRequest(
  */
 exports.scheduledFetchNews = onSchedule(
   {
-    schedule: 'every 2 hours',
-    timeZone: 'America/New_York',
-    memory: '512MiB',
+    schedule: "every 2 hours",
+    timeZone: "America/New_York",
+    memory: "512MiB",
     timeoutSeconds: 540,
   },
   async (event) => {
-    console.log('🔄 Scheduled news fetch started:', new Date().toISOString());
-    
+    console.log("🔄 Scheduled news fetch started:", new Date().toISOString());
+
     try {
       const allArticles = await rssService.fetchAllArticles();
-      const deduplicatedArticles = DeduplicationService.deduplicateArticles(allArticles);
-      const saveResult = await storageService.saveArticles(deduplicatedArticles);
-      
-      console.log(`✅ Scheduled fetch complete: ${saveResult.saved} articles saved`);
+      const deduplicatedArticles =
+        DeduplicationService.deduplicateArticles(allArticles);
+      const saveResult = await storageService.saveArticles(
+        deduplicatedArticles
+      );
+
+      console.log(
+        `✅ Scheduled fetch complete: ${saveResult.saved} articles saved`
+      );
       return null;
     } catch (error) {
-      console.error('❌ Error in scheduled fetch:', error);
+      console.error("❌ Error in scheduled fetch:", error);
       return null;
     }
   }
@@ -549,29 +603,29 @@ exports.scheduledFetchNews = onSchedule(
  */
 exports.scheduledProcessArticles = onSchedule(
   {
-    schedule: 'every 30 minutes',
-    timeZone: 'America/New_York',
-    memory: '1GiB',
+    schedule: "every 30 minutes",
+    timeZone: "America/New_York",
+    memory: "1GiB",
     timeoutSeconds: 540,
   },
   async (event) => {
-    if (!GEMINI_API_KEY) {
-      console.error('❌ Gemini API key not configured');
-      return null;
-    }
+    // Initialize AI and image services once per scheduled run
+    const aiService = new AIService(PROJECT_ID);
+    const imageService = new ImageService(UNSPLASH_API_KEY, PEXELS_API_KEY);
 
-    console.log('🤖 Scheduled AI processing started:', new Date().toISOString());
-    
+    console.log(
+      "🤖 Scheduled AI processing started:",
+      new Date().toISOString()
+    );
+
     try {
-      const aiService = new AIService(GEMINI_API_KEY);
-      const imageService = new ImageService(UNSPLASH_API_KEY, PEXELS_API_KEY);
-      
+
       const articles = await storageService.getUnprocessedArticles(
         LIMITS.AI_MAX_ARTICLES_PER_RUN
       );
 
       if (articles.length === 0) {
-        console.log('No articles to process');
+        console.log("No articles to process");
         return null;
       }
 
@@ -600,17 +654,23 @@ exports.scheduledProcessArticles = onSchedule(
             );
           }
 
-          await storageService.updateArticleWithAI(article.ref, aiResult, imageData);
+          await storageService.updateArticleWithAI(
+            article.ref,
+            aiResult,
+            imageData
+          );
           processed++;
         } catch (error) {
           console.error(`Error processing article ${article.id}:`, error);
         }
       }
 
-      console.log(`✅ Scheduled processing complete: ${processed} processed, ${skipped} skipped`);
+      console.log(
+        `✅ Scheduled processing complete: ${processed} processed, ${skipped} skipped`
+      );
       return null;
     } catch (error) {
-      console.error('❌ Error in scheduled processing:', error);
+      console.error("❌ Error in scheduled processing:", error);
       return null;
     }
   }
@@ -621,23 +681,23 @@ exports.scheduledProcessArticles = onSchedule(
  */
 exports.scheduledCleanupOldArticles = onSchedule(
   {
-    schedule: '0 4 1 * *', // At 4:00 AM on the 1st of every month
-    timeZone: 'America/New_York',
-    memory: '256MiB',
+    schedule: "0 4 1 * *", // At 4:00 AM on the 1st of every month
+    timeZone: "America/New_York",
+    memory: "256MiB",
     timeoutSeconds: 300,
   },
   async (event) => {
-    console.log('🧹 Scheduled cleanup started:', new Date().toISOString());
-    
+    console.log("🧹 Scheduled cleanup started:", new Date().toISOString());
+
     try {
       const deletedCount = await storageService.deleteOldArticles(
         LIMITS.ARTICLE_RETENTION_DAYS
       );
-      
+
       console.log(`✅ Cleanup complete: ${deletedCount} old articles deleted`);
       return null;
     } catch (error) {
-      console.error('❌ Error in scheduled cleanup:', error);
+      console.error("❌ Error in scheduled cleanup:", error);
       return null;
     }
   }
