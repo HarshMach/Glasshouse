@@ -6,16 +6,16 @@ const SkeletonCard = () => {
   return (
     <div className="flex flex-col overflow-hidden animate-pulse">
       {/* Image skeleton - square aspect ratio */}
-      <div className="relative w-full aspect-square bg-gray-700">
+      <div className="relative w-full aspect-square bg-zinc-900">
         {/* Category skeleton at top */}
         <div className="absolute top-0 left-0 right-0 z-20 p-4">
-          <div className="h-4 w-20 bg-gray-600 rounded"></div>
+          <div className="h-4 w-20 bg-gray-700/30 rounded"></div>
         </div>
 
         {/* Title skeleton at bottom */}
         <div className="absolute bottom-0 left-0 right-0 z-20 p-4 bg-gradient-to-t from-black/80 to-transparent space-y-2">
-          <div className="h-5 bg-gray-600 rounded w-full"></div>
-          <div className="h-5 bg-gray-600 rounded w-3/4"></div>
+          <div className="h-5 bg-gray-600/60 rounded w-full"></div>
+          <div className="h-5 bg-gray-600/50 rounded w-3/4"></div>
         </div>
       </div>
 
@@ -24,16 +24,16 @@ const SkeletonCard = () => {
         {/* First row skeleton */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="h-4 w-12 bg-gray-700 rounded"></div>
-            <div className="h-4 w-12 bg-gray-700 rounded"></div>
+            <div className="h-4 w-12 bg-gray-700/30 rounded"></div>
+            <div className="h-4 w-12 bg-gray-700/30 rounded"></div>
           </div>
-          <div className="h-4 w-24 bg-gray-700 rounded"></div>
+          <div className="h-4 w-24 bg-gray-700/30 rounded"></div>
         </div>
 
         {/* Second row skeleton */}
         <div className="flex items-center justify-between gap-2">
-          <div className="h-3 w-20 bg-gray-700 rounded"></div>
-          <div className="h-3 w-16 bg-gray-700 rounded"></div>
+          <div className="h-3 w-20 bg-gray-700/30 rounded"></div>
+          <div className="h-3 w-16 bg-gray-700/30  rounded"></div>
         </div>
       </div>
     </div>
@@ -42,15 +42,16 @@ const SkeletonCard = () => {
 
 export default function ArticleGrid({ articles, onSelect, isLoading }) {
   // Show skeleton loaders when loading
-  if (isLoading) {
-    return (
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {[...Array(6)].map((_, index) => (
-          <SkeletonCard key={index} />
-        ))}
-      </div>
-    );
-  }
+ if (isLoading) {
+  return (
+    <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {[...Array(6)].map((_, index) => (
+        <SkeletonCard key={index} />
+      ))}
+    </div>
+  );
+}
+
 
   if (!articles || articles.length === 0) {
     return (

@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import Layout from "../components/layout.jsx";
 import ArticleGrid from "../components/ArticleGrid.jsx";
-import { getArticles, trackView } from '../../lib/api.js';
+import { getArticles, trackView , searchArticles} from '../../lib/api.js';
 import ArticleModal from "../components/ArticleModal.jsx";
 
 
@@ -9,7 +9,7 @@ function Homepage() {
   const [activeTab, setActiveTab] = useState("recent");
   const [category, setCategory] = useState('all');
   const [selectedArticle, setSelectedArticle] = useState(null);
-  
+  const [searching, setSearching] = useState(false);
   const [articles, setArticles] = useState([]);
   const [cursor, setCursor] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -94,13 +94,8 @@ useEffect(() => {
       activeTab={activeTab}
       onTabChange={handleTabChange}
     >
-      {articles.length === 0 && loading ? (
-        <div className="mt-10 text-center text-sm text-slate-400">
-          Loading articles...
-        </div>
-      ) : (
-        <>
-          <ArticleGrid articles={articles} onSelect={handleSelectArticle} />
+    
+          <ArticleGrid articles={articles} onSelect={handleSelectArticle}  isLoading={loading} />
           
           {/* Load More Button */}
           {hasMore && (
@@ -120,8 +115,8 @@ useEffect(() => {
               No more articles to load
             </div>
           )}
-        </>
-      )}
+        
+    
 
       {selectedArticle && (
         <ArticleModal
