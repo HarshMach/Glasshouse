@@ -136,9 +136,9 @@ export default function ArticleModal({ article, onClose }) {
       <div className="relative w-full max-w-5xl h-max-content bg-black border border-white/10">
         <button
           onClick={onClose}
-          className="absolute right-3 top-3 bg-black/40 px-3 py-1 text-xs text-slate-200 hover:bg-black/60 z-10"
+          className="absolute right-3 top-3  px-3 py-1 text-xl text-slate-200 hover:bg-black/60 z-10"
         >
-          Close
+          X
         </button>
 
         <div className="flex h-full text-white">

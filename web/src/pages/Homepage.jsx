@@ -5,7 +5,7 @@ import { getArticles, trackView } from '../../lib/api.js';
 import ArticleModal from "../components/ArticleModal.jsx";
 
 
-function HomePage() {
+function Homepage() {
   const [activeTab, setActiveTab] = useState("recent");
   const [category, setCategory] = useState('all');
   const [selectedArticle, setSelectedArticle] = useState(null);
@@ -49,7 +49,7 @@ function HomePage() {
       setHasMore(!!res.nextCursor);
       
     } catch (e) {
-      console.error('Failed to load articles', e);
+      console.error("Failed to load articles", e);
     } finally {
       setLoading(false);
       isLoadingMore.current = false;
@@ -88,7 +88,7 @@ useEffect(() => {
   };
 
   return (
-    <Layout 
+    <Layout
       onCategoryChange={handleCategoryChange}
       currentCategory={category}
       activeTab={activeTab}
@@ -133,4 +133,4 @@ useEffect(() => {
   );
 }
 
-export default HomePage;
+export default Homepage;
