@@ -45,9 +45,9 @@ const DEDUPLICATION = {
 // AI Processing
 const AI_CONFIG = {
   MIN_ARTICLE_QUALITY_SCORE: 3, // Out of 10
-  SUMMARY_MAX_LENGTH: 300,
-  IMPACT_MAX_LENGTH: 200,
-  MODEL_NAME: "gemini-1.5-flash", // Using flash model for free tier
+  SUMMARY_MAX_LENGTH: 1500,
+  IMPACT_MAX_LENGTH: 1500,
+  MODEL_NAME: "gemini-2.0-flash", // Using flash model for free tier
 };
 
 // Image settings

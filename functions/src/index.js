@@ -249,11 +249,7 @@ exports.processArticles = onRequest(
   }
 );
 
-// ========== GET ARTICLES (PUBLIC) ==========
-/**
- * Get articles with optional category filter
- */
-// ========== GET ARTICLES (PUBLIC) ==========
+
 /**
  * Get articles with optional category filter, sorting, and pagination
  */
@@ -298,52 +294,6 @@ exports.getArticles = onRequest(
 );
 
 
-// ========== SEARCH ARTICLES (PUBLIC) ==========
-/**
- * Search articles by query with fuzzy matching
- */
-exports.searchArticles = onRequest(
-  { memory: '256MiB', timeoutSeconds: 60, cors: true },
-  async (req, res) => {
-    // CORS headers
-    res.set('Access-Control-Allow-Origin', '*');
-    res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    res.set('Access-Control-Allow-Headers', 'Content-Type');
-    
-    if (req.method === 'OPTIONS') {
-      res.status(204).send('');
-      return;
-    }
-
-    try {
-      const query = req.query.q || '';
-      const limit = Math.min(parseInt(req.query.limit) || 50, 100);
-
-      if (!query || query.length < 2) {
-        return res.status(400).json({
-          success: false,
-          error: 'Query must be at least 2 characters',
-        });
-      }
-
-      const articles = await storageService.searchArticles(query, limit);
-
-      res.json({
-        success: true,
-        count: articles.length,
-        query,
-        articles,
-        timestamp: new Date().toISOString(),
-      });
-    } catch (error) {
-      console.error('Error searching articles:', error);
-      res.status(500).json({
-        success: false,
-        error: error.message,
-      });
-    }
-  }
-);
 
 // ========== ENGAGEMENT ENDPOINTS (PUBLIC) ==========
 /**
@@ -558,55 +508,6 @@ exports.getComments = onRequest(
       });
     } catch (error) {
       console.error('Error getting comments:', error);
-      res.status(500).json({
-        success: false,
-        error: error.message,
-      });
-    }
-  }
-);
-
-// ========== REPORTING (PUBLIC) ==========
-/**
- * Report content (article or comment)
- */
-exports.reportContent = onRequest(
-  { memory: '128MiB', timeoutSeconds: 10, cors: true },
-  async (req, res) => {
-    res.set('Access-Control-Allow-Origin', '*');
-    res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.set('Access-Control-Allow-Headers', 'Content-Type');
-    
-    if (req.method === 'OPTIONS') {
-      res.status(204).send('');
-      return;
-    }
-
-    try {
-      const { contentType, contentId, reason, reportedBy } = req.body;
-      
-      if (!contentType || !contentId || !reason || !reportedBy) {
-        return res.status(400).json({
-          success: false,
-          error: 'contentType, contentId, reason, and reportedBy are required',
-        });
-      }
-
-      if (!['article', 'comment'].includes(contentType)) {
-        return res.status(400).json({
-          success: false,
-          error: 'contentType must be "article" or "comment"',
-        });
-      }
-
-      await storageService.reportContent(contentType, contentId, reason, reportedBy);
-
-      res.json({
-        success: true,
-        message: 'Content reported successfully',
-      });
-    } catch (error) {
-      console.error('Error reporting content:', error);
       res.status(500).json({
         success: false,
         error: error.message,

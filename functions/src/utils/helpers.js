@@ -264,6 +264,37 @@ function fuzzyMatch(str1, str2, threshold = 0.7) {
   return similarity >= threshold;
 }
 
+/**
+ * Strong HTML cleaner: removes tags, links, "continue reading", and boilerplate
+ */
+function cleanHtml(html) {
+  if (!html || typeof html !== 'string') return '';
+
+  return html
+
+    // Remove all HTML tags
+    .replace(/<[^>]+>/g, ' ')
+
+    // Remove URLs
+    .replace(/https?:\/\/\S+/gi, '')
+
+    // Remove common "read more" patterns
+    .replace(/continue reading.*/gi, '')
+    .replace(/read more.*/gi, '')
+    .replace(/click here.*/gi, '')
+
+    // Remove HTML entities
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+
+    // Collapse multiple spaces
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+
 module.exports = {
   isValidRSSUrl,
   isValidUrl,
@@ -276,4 +307,5 @@ module.exports = {
   verifyApiKey,
   getClientIp,
   fuzzyMatch,
+  cleanHtml,
 };
