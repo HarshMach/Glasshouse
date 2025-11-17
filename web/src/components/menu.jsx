@@ -185,7 +185,7 @@ const Menu = ({ onCategoryChange, currentCategory = "all" }) => {
 
           {/* Main Navigation Section */}
           <nav
-            className="main-navigation-section flex-1 flex flex-col justify-center items-center text-center px-8 py-16"
+            className="main-navigation-section flex-1 flex flex-col justify-center items-center text-center px-8 "
             role="navigation"
             aria-label="Categories navigation"
             onClick={(e) => e.stopPropagation()}

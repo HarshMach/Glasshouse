@@ -2,83 +2,97 @@ import React from "react";
 import { useState } from "react";
 import Menu from "../components/menu.jsx";
 import Layout from "../components/layout.jsx";
+import Background from "../images/Background.png";
+import VectorW from "../images/VectorW.png";
+import Fists from "../images/Fists.png";
 const About = () => {
- 
+  const [bobbingConfig] = useState(() => ({
+    Fists: {
+      duration: `${3 + Math.random() * 3}s`, // 3–6s
+      delay: `${Math.random() * 2}s`, // 0–2s
+    },
+  }));
+
   return (
-    <Layout>
-     
-   
-        
-  
+    <div className="bg-black">
+      <Layout>
+        {/* About Content */}
+        <div className="max-w-5xl mx-auto relative">
+          <h1 className="text-8xl bg-[#FF6A00] font-medium text-center text-black mt-10 mb-20">
+            Because Power Belongs <br></br>To The Informed
+          </h1>
 
-      {/* About Content */}
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-6xl font-bold text-[#FF6A00] mb-8">ABOUT US</h1>
-        
-        <div className="space-y-6 text-lg leading-relaxed">
-          <p className="text-gray-300">
-            Welcome to <span className="text-[#B8FF4D] font-bold">GLASSHOUSE</span>, 
-            your trusted source for AI-powered news that actually tells you how it affects your daily life.
-          </p>
-          
-          <p className="text-gray-300">
-            We believe that news shouldn't just inform—it should empower. That's why we use cutting-edge 
-            artificial intelligence to analyze and contextualize news stories, giving you the real-world 
-            implications behind every headline.
-          </p>
+          <div className="absolute inset-0 pointer-events-none ">
+            <img
+              src={Fists}
+              alt=""
+              className="absolute animate-bob"
+              style={{
+                top: "20%",
+                left: "-4%",
+                width: "18%",
 
-          <div className="bg-gray-900 p-6 rounded-lg border-l-4 border-[#FF6A00]">
-            <h2 className="text-2xl font-bold text-[#B8FF4D] mb-4">Our Mission</h2>
-            <p className="text-gray-300">
-              To democratize information by making complex news stories accessible, relevant, 
-              and actionable for everyone.
-            </p>
+                opacity: 1,
+                rotate: "-10deg",
+              }}
+            />
+            <img
+              src={Fists}
+              alt=""
+              className="absolute animate-bob"
+              style={{
+                top: "20%",
+                right: "-4%",
+                width: "18%",
+
+                opacity: 1,
+                rotate: "10deg",
+              }}
+            />
           </div>
-
-          <div className="grid md:grid-cols-2 gap-8 mt-8">
-            <div className="bg-gray-900 p-6 rounded-lg">
-              <h3 className="text-xl font-bold text-[#FF6A00] mb-3">AI-Powered Insights</h3>
-              <p className="text-gray-300">
-                Our advanced algorithms analyze news from multiple sources to provide you 
-                with balanced perspectives and practical implications.
-              </p>
-            </div>
-            
-            <div className="bg-gray-900 p-6 rounded-lg">
-              <h3 className="text-xl font-bold text-[#FF6A00] mb-3">Real Impact</h3>
-              <p className="text-gray-300">
-                Every story includes clear explanations of how it affects your finances, 
-                health, career, and daily decisions.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-8 pt-8 border-t border-gray-700">
-            <h2 className="text-3xl font-bold text-[#B8FF4D] mb-4">Our Team</h2>
-            <p className="text-gray-300">
-              We're a diverse group of journalists, data scientists, and AI experts 
-              passionate about making news more meaningful and accessible to everyone.
-            </p>
-          </div>
-
-          <div className="mt-8 pt-8 border-t border-gray-700">
-            <h2 className="text-3xl font-bold text-[#B8FF4D] mb-4">Contact Us</h2>
-            <p className="text-gray-300 mb-4">
-              Have questions, suggestions, or want to report an issue? We'd love to hear from you.
-            </p>
-            <div className="space-y-2">
-              <p className="text-gray-300">
-                <span className="text-[#FF6A00]">Email:</span> contact@glasshouse.com
-              </p>
-              <p className="text-gray-300">
-                <span className="text-[#FF6A00]">Twitter:</span> @glasshouse
+          <div className="flex gap-8 items-center">
+            <div className="flex-1">
+              <p className="text-white text-lg leading-relaxed mb-10">
+                How many newspapers do you have to scroll through before you
+                actually feel informed?<br></br> How many policy documents do
+                you have to read just to know if your job is safe?<br></br> How
+                much political mumbo jumbo do you have to digest before you find
+                out if your wages are going up, down, or nowhere?<br></br>
+                <br></br>{" "}
+                <strong className="text-[#88EE00]">
+                  {" "}
+                  This problem shouldn’t exist. Ever. At all.
+                </strong>{" "}
+                <br></br>
+                <br></br>
+                Our job is simple:
+                <strong className="text-[#88EE00]">
+                  {" "}
+                  feed you straight, short-form information{" "}
+                </strong>{" "}
+                so people can understand what’s changing, how it affects them,
+                and move on with their lives. That’s how news should be.
+                <br></br>
+                <br></br> Our AI scans trusted RSS feeds, understands the
+                context, and figures out what each article could mean for{" "}
+                <strong>your money, your rights, and your health.</strong> Then
+                it strips out the fluff and gives you what matters. Plain,
+                direct, and to the point.{" "}
+                <strong className="text-[#88EE00]">
+                  No jargon. No essays. No nonsense.
+                </strong>
+                <br></br>
+                <br></br>{" "}
+                <strong className="text-[#88EE00]">
+                  Just the working person staying informed{" "}
+                </strong>
+                , the way it should have been from the start.
               </p>
             </div>
           </div>
         </div>
-      </div>
-        
-    </Layout>
+      </Layout>
+    </div>
   );
 };
 

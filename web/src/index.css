@@ -10,12 +10,18 @@
   font-style: normal;
   font-display: swap;
 }
-
+@font-face {
+  font-family: "Satoshi";
+  src: url("./OTF/Satoshi-Light.otf") format("opentype");
+  font-weight: 400;
+  font-style: light;
+  font-display: swap;
+}
 @font-face {
   font-family: "Satoshi";
   src: url("./OTF/Satoshi-Medium.otf") format("opentype");
   font-weight: 500;
-  font-style: normal;
+  font-style: medium;
   font-display: swap;
 }
 
@@ -23,7 +29,7 @@
   font-family: "Satoshi";
   src: url("./OTF/Satoshi-Bold.otf") format("opentype");
   font-weight: 700;
-  font-style: normal;
+  font-style: bold;
   font-display: swap;
 }
 
@@ -31,7 +37,7 @@
   font-family: "Satoshi";
   src: url("./OTF/Satoshi-Black.otf") format("opentype");
   font-weight: 900;
-  font-style: normal;
+  font-style: black;
   font-display: swap;
 }
 
