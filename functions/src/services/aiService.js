@@ -1,95 +1,23 @@
-/**
- * AI Service - Enhanced with quality filtering and better prompts
- * Uses Gemini API with rate limiting and smart categorization
- */
-
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const { AI_CONFIG, RATE_LIMITING, CATEGORIES } = require('../config/constants');
-const { delay, extractKeywords } = require('../utils/helpers');
+const { AI_CONFIG, RATE_LIMITING , CATEGORIES} = require('../config/constants'); 
+const { delay,cleanHtml } = require('../utils/helpers');
+const { webSearch } = require('../services/webSearch');
+require('dotenv').config();
 
 class AIService {
-  constructor(apiKey) {
-    if (!apiKey) {
-      throw new Error('Gemini API key is required');
-    }
+  constructor(apiKey, temperature = 0.5) {
+    if (!apiKey) throw new Error('Gemini API key is required');
     this.genAI = new GoogleGenerativeAI(apiKey);
-    this.model = this.genAI.getGenerativeModel({ model: AI_CONFIG.MODEL_NAME });
+    this.model = this.genAI.getGenerativeModel({ 
+      model: AI_CONFIG.MODEL_NAME, 
+      temperature 
+    });
     this.requestCount = 0;
     this.lastRequestTime = Date.now();
+    
+
   }
-
-  /**
-   * Rate limit AI requests to stay within free tier
-   */
-  async rateLimitDelay() {
-    const now = Date.now();
-    const timeSinceLastRequest = now - this.lastRequestTime;
-    
-    // Reset counter every minute
-    if (timeSinceLastRequest > 60000) {
-      this.requestCount = 0;
-    }
-    
-    // If we're at the limit, wait
-    if (this.requestCount >= RATE_LIMITING.GEMINI_REQUESTS_PER_MINUTE) {
-      const waitTime = 60000 - timeSinceLastRequest;
-      console.log(`Rate limit reached, waiting ${waitTime}ms`);
-      await delay(waitTime);
-      this.requestCount = 0;
-    }
-    
-    // Delay between requests to avoid bursting
-    await delay(RATE_LIMITING.GEMINI_DELAY_MS);
-    
-    this.requestCount++;
-    this.lastRequestTime = Date.now();
-  }
-
-  /**
-   * Evaluate article quality - returns score 1-10 and reasoning
-   */
-  async evaluateArticleQuality(article) {
-    try {
-      await this.rateLimitDelay();
-
-      const prompt = `You are a news quality evaluator. Rate this article on a scale of 1-10 based on:
-- Newsworthiness and relevance (is it actually news?)
-- Clarity and completeness of information
-- Significance to readers' daily lives
-- NOT celebrity gossip, clickbait, or purely promotional content
-
-Title: ${article.title}
-Description: ${article.description}
-
-Respond ONLY with a number from 1-10, followed by a colon and one short sentence explaining why.
-Example: "7: Important economic policy change affecting consumers."
-
-Your rating:`;
-
-      const result = await this.model.generateContent(prompt);
-      const response = result.response.text().trim();
-      
-      // Parse response (e.g., "7: Significant policy change")
-      const match = response.match(/^(\d+):\s*(.+)$/);
-      if (match) {
-        const score = parseInt(match[1]);
-        const reason = match[2];
-        return { score, reason, shouldProcess: score >= AI_CONFIG.MIN_ARTICLE_QUALITY_SCORE };
-      }
-      
-      // Fallback if parsing fails
-      console.warn(`Could not parse quality score: ${response}`);
-      return { score: 5, reason: 'Could not evaluate', shouldProcess: true };
-    } catch (error) {
-      console.error('Error evaluating article quality:', error);
-      return { score: 5, reason: 'Evaluation error', shouldProcess: true };
-    }
-  }
-
-  /**
-   * Detect the best category for an article using AI
-   */
-  async detectCategory(article) {
+ async detectCategory(article) {
     try {
       await this.rateLimitDelay();
 
@@ -117,24 +45,46 @@ Respond with ONLY the category name, nothing else.`;
     }
   }
 
-  /**
-   * Generate summary AND an image prompt in a single AI call.
-   * Returns { summary, imagePrompt }.
-   */
+
   async generateSummaryAndImagePrompt(article) {
     try {
       await this.rateLimitDelay();
+      const content = cleanHtml(article.combinedDescription || article.description);
+      // FREE external context
+const externalResults = await webSearch(article.title || article.description);
+console.log("🌐 DuckDuckGo results:", externalResults);
+
+let externalContext = "";
+if (externalResults.length > 0) {
+  externalContext = externalResults
+    .map(r => `- ${r.title}: ${r.snippet}`)
+    .join("\n");
+      }
+      console.log("🔍 Web search results:", externalContext);
+
 
       const prompt = `You are a professional news summarizer and visual editor for "The GlassHouse" - a news platform that provides clear, actionable insights.
+Use BOTH:
+1. The article content  
+2. External verified information (below)
+
+=== ARTICLE CONTENT ===
+${content}
+
+=== EXTERNAL SEARCH (DuckDuckGo) ===
+${externalContext || "No external info found"}
 
 Your tasks:
-1) Write a clear, neutral 2-3 sentence summary covering:
+1) Write a clear, neutral summary covering:
    - What happened (key facts and events)
    - Who is involved (key people, organizations, or groups)
    - When and where it occurred
    - Why it matters
+2) DO NOT copy phrases or sentences from the original article. Always rewrite in new wording.
+3) Avoid filler like "Continue reading" or attribution text.
 
-2) Propose a SHORT image prompt (3-10 words) for a representative photo or illustration that would fit this article. The image prompt should be concrete and visual (e.g., "shoppers browsing thrift store clothing racks"), not abstract (avoid generic words like "concept" or "metaphor").
+4) Propose a SHORT image prompt (3-10 words) for a representative photo or illustration that would fit this article. The image prompt should be concrete and visual (e.g., "shoppers browsing thrift store clothing racks"), not abstract (avoid generic words like "concept" or "metaphor").
+
 
 Respond ONLY with valid JSON in this format (no markdown, no extra text):
 {
@@ -145,7 +95,7 @@ Respond ONLY with valid JSON in this format (no markdown, no extra text):
 Title: ${article.title}
 Source: ${article.source}
 Category: ${article.category}
-Content: ${article.combinedDescription || article.description}
+Content: ${content}
 `;
 
       const result = await this.model.generateContent(prompt);
@@ -191,46 +141,63 @@ Content: ${article.combinedDescription || article.description}
     }
   }
 
-  /**
-   * Generate comprehensive daily life impact analysis
-   */
+
+
+  async rateLimitDelay() {
+    const now = Date.now();
+    const elapsed = now - this.lastRequestTime;
+    if (elapsed > 60000) this.requestCount = 0;
+
+    if (this.requestCount >= RATE_LIMITING.GEMINI_REQUESTS_PER_MINUTE) {
+      const waitTime = 60000 - elapsed;
+      console.log(`Rate limit reached, waiting ${waitTime}ms`);
+      await delay(waitTime);
+      this.requestCount = 0;
+    }
+
+    await delay(RATE_LIMITING.GEMINI_DELAY_MS);
+    this.requestCount++;
+    this.lastRequestTime = Date.now();
+  }
+
   async generateDailyImpact(article, summary) {
     try {
       await this.rateLimitDelay();
 
-      const prompt = `You are an analyst for "The GlassHouse" explaining how news affects everyday people.
-
-Based on this news article, explain in 2-3 practical sentences how it could impact someone's daily life. Consider:
-
-**Financial Impact**: Changes to costs, taxes, savings, employment, investments
-**Health & Safety**: Public health, food safety, environment, personal security
-**Rights & Access**: Laws, regulations, services, freedoms, opportunities
-**Practical Changes**: Daily routines, travel, work, shopping, technology use
-**Local Effects**: How this might ripple down to communities and individuals
-
-Be SPECIFIC and PRACTICAL. Use concrete examples when possible.
-
-If the news has NO meaningful impact on daily life (e.g., pure entertainment, ceremonial events), respond with exactly: "N/A"
+      let prompt = `You are an expert news analyst. Generate a **concise but comprehensive daily life impact** for readers.
+      
+1) Describe practical effects on people's day-to-day life: finances, routines, safety, rights, and access.
+2) If no direct impact exists, analyze **secondary/global consequences**: e.g., economy, inflation, humanitarian effects.
+3) Be specific and actionable. Avoid echoing the summary.
+4) Use examples: e.g., "Gaza ceasefire may temporarily reduce local violence, but humanitarian aid delays could affect food prices and services."
 
 Title: ${article.title}
 Category: ${article.category}
 Summary: ${summary}
 
-Daily Life Impact:`;
+Provide 2-3 sentences of impact. If truly irrelevant, respond "N/A".`;
 
-      const result = await this.model.generateContent(prompt);
+      let result = await this.model.generateContent(prompt);
       let impact = result.response.text().trim();
-      
-      // Check if it's N/A or too short
-      if (impact === 'N/A' || impact.length < 10) {
-        return null;
+
+      // If output is too short or N/A, attempt secondary analysis
+      if (!impact || impact === 'N/A' || impact.length < 10) {
+        console.log(`Generating secondary/global impact for: ${article.title}`);
+        prompt = `The previous article had no direct daily impact. Analyze potential indirect impacts:
+- Economic: prices, inflation, employment, investment
+- Social & humanitarian: health, safety, displacement
+- Political: policy changes, international relations
+Be concise, 2-3 sentences.`;
+
+        result = await this.model.generateContent(prompt);
+        impact = result.response.text().trim();
       }
-      
-      // Ensure impact isn't too long
+
+      if (!impact || impact.length < 10) return null;
       if (impact.length > AI_CONFIG.IMPACT_MAX_LENGTH) {
         impact = impact.substring(0, AI_CONFIG.IMPACT_MAX_LENGTH) + '...';
       }
-      
+
       return impact;
     } catch (error) {
       console.error('Error generating daily impact:', error);
@@ -239,28 +206,67 @@ Daily Life Impact:`;
   }
 
   /**
-   * Generate search keywords for stock image
+   * Validation function: ensures summary and daily impact aren't just repeating description
    */
-  async generateImageKeywords(article) {
-    try {
-      // Quick extraction without AI to save quota
-      const keywords = extractKeywords(article.title, 3);
-      
-      // Add category as context
-      if (article.category && article.category !== 'general') {
-        keywords.push(article.category);
-      }
-      
-      return keywords.slice(0, 3).join(' ');
-    } catch (error) {
-      console.error('Error generating image keywords:', error);
-      return article.category || 'news';
-    }
-  }
+  validateSummaryAndImpact(article, summary, impact) {
+    const description = (article.description || '').toLowerCase();
+    const sumLower = (summary || '').toLowerCase();
+    const impactLower = (impact || '').toLowerCase();
 
-  /**
-   * Process a complete article with all AI enhancements
-   */
+    const summaryRepeats = description.includes(sumLower) || sumLower.includes(description);
+    const impactRepeats = description.includes(impactLower) || impactLower.includes(description);
+
+    return {
+      summaryValid: !summaryRepeats,
+      impactValid: !impactRepeats
+    };
+  }
+async evaluateArticleQuality(article) {
+  try {
+    await this.rateLimitDelay();
+
+    const prompt = `You are a news quality evaluator for "The GlassHouse." Rate this article on a scale of 1-10 considering:
+
+1) Newsworthiness: Is it relevant and significant for readers today?
+2) Clarity: Clear and complete information?
+3) Daily impact: How it affects everyday people directly or indirectly (financially, socially, politically, or globally).
+4) Avoid: Pure gossip, clickbait, entertainment-only, or promotional content.
+
+Title: ${article.title}
+Description: ${article.description}
+
+**Important**: If the article has indirect/global effects (e.g., economic impact, humanitarian consequences, political ramifications), consider that in your rating.
+
+Respond ONLY with a number 1-10, followed by a colon and a short sentence explaining why.
+Example: "8: Economic sanctions may affect imports, impacting daily prices for consumers." 
+
+Your rating:`;
+
+    const result = await this.model.generateContent(prompt);
+    const response = result.response.text().trim();
+
+    const match = response.match(/^(\d+):\s*(.+)$/);
+    if (match) {
+      const score = parseInt(match[1]);
+      const reason = match[2];
+
+      return {
+        score,
+        reason,
+        shouldProcess: score >= AI_CONFIG.MIN_ARTICLE_QUALITY_SCORE
+      };
+    }
+
+    console.warn(`Could not parse quality score: ${response}`);
+    return { score: 5, reason: 'Could not evaluate', shouldProcess: true };
+
+  } catch (error) {
+    console.error('Error evaluating article quality:', error);
+    return { score: 5, reason: 'Evaluation error', shouldProcess: true };
+  }
+}
+
+  // processArticle() can call validateSummaryAndImpact before sending to DB
   async processArticle(article) {
     const result = {
       shouldPublish: false,
@@ -273,51 +279,24 @@ Daily Life Impact:`;
     };
 
     try {
-      // Step 1: Evaluate quality
-      console.log(`Evaluating quality: ${article.title.substring(0, 50)}...`);
       const qualityCheck = await this.evaluateArticleQuality(article);
       result.qualityScore = qualityCheck.score;
       result.qualityReason = qualityCheck.reason;
+      if (!qualityCheck.shouldProcess) return result;
 
-      if (!qualityCheck.shouldProcess) {
-        console.log(`❌ Skipping low-quality article (score: ${qualityCheck.score}): ${article.title}`);
-        return result;
-      }
-
-      // Step 2: Detect better category
-      console.log(`Detecting category: ${article.title.substring(0, 50)}...`);
       result.category = await this.detectCategory(article);
-
-      // Step 3: Generate summary + image prompt in a single call
-      console.log(`Generating summary and image prompt: ${article.title.substring(0, 50)}...`);
-      const { summary, imagePrompt } = await this.generateSummaryAndImagePrompt({
-        ...article,
-        category: result.category,
-      });
+      const { summary, imagePrompt } = await this.generateSummaryAndImagePrompt({ ...article, category: result.category });
       result.summary = summary;
 
-      // Step 4: Generate daily life impact (skip for sports/entertainment unless significant)
-      if (result.qualityScore >= 6 || !['sports', 'entertainment'].includes(result.category)) {
-        console.log(`Generating impact: ${article.title.substring(0, 50)}...`);
-        result.dailyLifeImpact = await this.generateDailyImpact(
-          { ...article, category: result.category },
-          result.summary
-        );
-      }
+      result.dailyLifeImpact = await this.generateDailyImpact({ ...article, category: result.category }, summary);
 
-      // Step 5: Generate image keywords (prefer imagePrompt if available)
-      if (imagePrompt) {
-        result.imageKeywords = imagePrompt;
-      } else {
-        result.imageKeywords = await this.generateImageKeywords({
-          ...article,
-          category: result.category,
-        });
-      }
+      // Validate summary & impact
+      const validation = this.validateSummaryAndImpact(article, summary, result.dailyLifeImpact);
+      if (!validation.summaryValid) console.warn(`Summary may echo description: ${article.title}`);
+      if (!validation.impactValid) console.warn(`Daily impact may echo description: ${article.title}`);
 
-      // Mark as ready to publish
+      result.imageKeywords = imagePrompt || await this.generateImageKeywords({ ...article, category: result.category });
       result.shouldPublish = true;
-      console.log(`✅ Article processed successfully: ${article.title.substring(0, 50)}...`);
 
       return result;
     } catch (error) {
@@ -326,5 +305,4 @@ Daily Life Impact:`;
     }
   }
 }
-
 module.exports = AIService;
