@@ -1,26 +1,26 @@
 import React from "react";
 import vector from "../images/Vector.png";
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import Menu from "./menu";
 import { Link } from "react-router-dom";
-import Background from "../images/Background.png";
+
 const Layout = ({
   children,
   onCategoryChange,
   currentCategory = "all",
   activeTab = "recent",
-  onTabChange, // default background
+  onTabChange, 
 }) => {
   const [bobbingConfig] = useState(() => ({
     Vector: {
-      duration: `${3 + Math.random() * 3}s`, // 3–6s
-      delay: `${Math.random() * 2}s`, // 0–2s
+      duration: `${3 + Math.random() * 3}s`, 
+      delay: `${Math.random() * 2}s`, 
     },
   }));
 
   return (
     <div className="flex min-h-screen scrollbar-hide">
-      {/* Sidebar Column - Sticky */}
+
       <aside className="sticky top-0 h-screen w-24 bg-[#99FF00] flex items-center justify-center">
         <div className="flex flex-col items-center justify-between h-full py-4 space-y-2 text-black font-bold">
           <span className="text-5xl lg:text-6xl xl:text-6xl">G</span>
@@ -50,13 +50,12 @@ const Layout = ({
         </div>
       </aside>
 
-      {/* Main Content Column */}
       <main className={`flex-1 `}>
-        {/* Top Navigation Bar */}
+   
         <nav
           className={`sticky top-0 z-40 px-8 py-6 flex items-center justify-between`}
         >
-          {/* Popular / Recent Tabs - Only show if onTabChange is provided */}
+     
           {onTabChange && (
             <div className="flex space-x-8">
               <button
@@ -82,14 +81,13 @@ const Layout = ({
             </div>
           )}
 
-          {/* Menu Component */}
+    
           <Menu
             onCategoryChange={onCategoryChange}
             currentCategory={currentCategory}
           />
         </nav>
 
-        {/* Content Area */}
         <div className={`p-8 `}>{children}</div>
       </main>
     </div>

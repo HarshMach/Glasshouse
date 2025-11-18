@@ -2,13 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import Fuse from "fuse.js";
 import { IoSearchOutline, IoCloseOutline } from "react-icons/io5";
 
-/**
- * SearchBar Component - Fuzzy search for articles
- *
- * @param {Array} articles - Array of articles to search through
- * @param {Function} onSearchResults - Callback when search results change: (results, isSearching) => void
- * @param {String} placeholder - Placeholder text for search input
- */
 const SearchBar = ({
   articles = [],
   onSearchResults,
@@ -17,36 +10,35 @@ const SearchBar = ({
   const [searchQuery, setSearchQuery] = useState("");
   const fuse = useRef(null);
 
-  // Initialize Fuse.js when articles change
   useEffect(() => {
     if (articles.length > 0) {
       fuse.current = new Fuse(articles, {
         keys: [
-          { name: "title", weight: 0.7 }, // Title most important
-          { name: "description", weight: 0.2 }, // Description secondary
-          { name: "summary", weight: 0.1 }, // Summary tertiary
+          { name: "title", weight: 0.7 }, 
+          { name: "description", weight: 0.2 }, 
+          { name: "summary", weight: 0.1 }, 
         ],
-        threshold: 0.4, // 0.0 = perfect match, 1.0 = match anything
-        distance: 100, // How far to search for patterns
-        minMatchCharLength: 2, // Minimum chars to trigger search
-        ignoreLocation: true, // Search entire string
-        includeScore: true, // Include match score (optional)
+        threshold: 0.4,
+        distance: 100, 
+        minMatchCharLength: 2,
+        ignoreLocation: true,
+        includeScore: true, 
       });
     }
   }, [articles]);
 
-  // Handle search input changes
+
   const handleSearchChange = (e) => {
     const query = e.target.value;
     setSearchQuery(query);
 
-    // Empty query - show all articles
+  
     if (query.trim().length === 0) {
       onSearchResults([], false);
       return;
     }
 
-    // Search with minimum 2 characters
+
     if (query.trim().length >= 2 && fuse.current) {
       const results = fuse.current.search(query);
       const articles = results.map((result) => result.item);
@@ -54,7 +46,7 @@ const SearchBar = ({
     }
   };
 
-  // Clear search
+
   const handleClearSearch = () => {
     setSearchQuery("");
     onSearchResults([], false);

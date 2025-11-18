@@ -1,7 +1,4 @@
-/**
- * The GlassHouse - Cloud Functions
- * Main entry point for all Firebase Cloud Functions
- */
+
 
 const { onRequest } = require("firebase-functions/v2/https");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
@@ -9,7 +6,7 @@ const { setGlobalOptions } = require("firebase-functions/v2");
 const { defineString } = require("firebase-functions/params");
 const admin = require("firebase-admin");
 
-// Initialize Firebase Admin
+
 if (!admin.apps.length) {
   admin.initializeApp();
 }
@@ -21,7 +18,7 @@ setGlobalOptions({
 
 const db = admin.firestore();
 
-// Import services
+
 const RSSService = require("./services/rssService");
 const AIService = require("./services/aiService");
 const ImageService = require("./services/imageService");
@@ -29,24 +26,18 @@ const DeduplicationService = require("./services/deduplicationService");
 const StorageService = require("./services/storageService");
 const { verifyApiKey, getClientIp } = require("./utils/helpers");
 const { LIMITS, COLLECTIONS } = require("./config/constants");
-
-// Initialize services
 const rssService = new RSSService(db);
 const storageService = new StorageService(db, admin);
 
-// Environment variables & runtime config
-// Project ID is automatically injected in Cloud Functions
 const PROJECT_ID =
   process.env.GCLOUD_PROJECT ||
   process.env.GCP_PROJECT ||
   process.env.GOOGLE_CLOUD_PROJECT;
 
-// Environment configuration using Firebase params API with env var fallback
 const UNSPLASH_API_KEY_PARAM = defineString("UNSPLASH_API_KEY");
 const PEXELS_API_KEY_PARAM = defineString("PEXELS_API_KEY");
 const API_KEY_PARAM = defineString("API_KEY");
 const APP_API_KEY_PARAM = defineString("APP_API_KEY");
-const BRAVE_API_KEY_PARAM = defineString("BRAVE_API_KEY");
 
 const UNSPLASH_API_KEY =
   UNSPLASH_API_KEY_PARAM.value() ||
@@ -58,7 +49,7 @@ const PEXELS_API_KEY =
   process.env.PEXELS_API_KEY ||
   null;
 
-// Admin/API key used to protect manual endpoints
+
 const API_KEY =
   API_KEY_PARAM.value() ||
   APP_API_KEY_PARAM.value() ||
@@ -66,12 +57,9 @@ const API_KEY =
   process.env.APP_API_KEY ||
   null;
 
-const BRAVE_KEY =
-  BRAVE_API_KEY_PARAM.value() ||
-  process.env.BRAVE_API_KEY ||
-  null;
 
-// ========== HEALTH CHECK ==========
+
+
 exports.health = onRequest(
   { memory: "128MiB", timeoutSeconds: 10 },
   async (req, res) => {
@@ -83,10 +71,7 @@ exports.health = onRequest(
   }
 );
 
-// ========== RSS FEED FETCHING ==========
-/**
- * Manually trigger RSS feed fetching
- */
+
 exports.fetchNews = onRequest(
   { memory: "512MiB", timeoutSeconds: 540 },
   async (req, res) => {
@@ -102,7 +87,7 @@ exports.fetchNews = onRequest(
     const startTime = Date.now();
 
     try {
-      // Step 1: Fetch from RSS feeds
+      
       console.log("Step 1: Fetching from RSS feeds...");
       const allArticles = await rssService.fetchAllArticles();
       console.log(`Fetched ${allArticles.length} articles from RSS feeds`);
@@ -118,7 +103,6 @@ exports.fetchNews = onRequest(
         });
       }
 
-      // Step 2: Deduplicate articles
       console.log("Step 2: Deduplicating articles...");
       const deduplicatedArticles =
         DeduplicationService.deduplicateArticles(allArticles);
@@ -126,7 +110,7 @@ exports.fetchNews = onRequest(
         `Deduplicated to ${deduplicatedArticles.length} unique articles`
       );
 
-      // Step 3: Save to Firestore
+  
       console.log("Step 3: Saving to Firestore...");
       const saveResult = await storageService.saveArticles(
         deduplicatedArticles
@@ -158,10 +142,7 @@ exports.fetchNews = onRequest(
   }
 );
 
-// ========== AI PROCESSING ==========
-/**
- * Process articles with AI (quality check, categorization, summary, impact)
- */
+
 exports.processArticles = onRequest(
   { memory: "1GiB", timeoutSeconds: 540 },
   async (req, res) => {
@@ -172,7 +153,7 @@ exports.processArticles = onRequest(
       });
     }
 
-    // Initialize AI and image services once per invocation
+   
     const aiService = new AIService(PROJECT_ID);
     const imageService = new ImageService(UNSPLASH_API_KEY, PEXELS_API_KEY);
 
@@ -182,7 +163,7 @@ exports.processArticles = onRequest(
 
     try {
 
-      // Get unprocessed articles
+     
       const articles = await storageService.getUnprocessedArticles(
         LIMITS.AI_MAX_ARTICLES_PER_RUN
       );
@@ -203,7 +184,7 @@ exports.processArticles = onRequest(
       let errorCount = 0;
       const errors = [];
 
-      // Process articles in batches to respect rate limits
+
       const batchSize = LIMITS.AI_PROCESSING_BATCH_SIZE;
 
       for (let i = 0; i < articles.length; i += batchSize) {
@@ -213,19 +194,19 @@ exports.processArticles = onRequest(
           try {
             console.log(`Processing: ${article.title.substring(0, 50)}...`);
 
-            // Process with AI
+       
             const aiResult = await aiService.processArticle(article);
 
             if (!aiResult.shouldPublish) {
               skippedCount++;
               console.log(
-                `❌ Skipped low-quality article: ${article.title.substring(
+                `Skipped low-quality article: ${article.title.substring(
                   0,
                   50
                 )}...`
               );
 
-              // Mark as processed but include AI fields even for low-quality articles
+            
               const updateData = {
                 processed: true,
                 qualityScore: aiResult.qualityScore,
@@ -233,7 +214,7 @@ exports.processArticles = onRequest(
                 processedAt: admin.firestore.FieldValue.serverTimestamp(),
               };
 
-              // Include AI-generated content even for low-quality articles
+          
               if (aiResult.summary) updateData.summary = aiResult.summary;
               if (aiResult.dailyLifeImpact)
                 updateData.dailyLifeImpact = aiResult.dailyLifeImpact;
@@ -243,7 +224,7 @@ exports.processArticles = onRequest(
               continue;
             }
 
-            // Fetch stock image
+  
             let imageData = null;
             if (aiResult.imageKeywords) {
               imageData = await imageService.getImageForArticle(
@@ -252,7 +233,6 @@ exports.processArticles = onRequest(
               );
             }
 
-            // Update article with AI results
             await storageService.updateArticleWithAI(
               article.ref,
               aiResult,
@@ -260,7 +240,7 @@ exports.processArticles = onRequest(
             );
 
             processedCount++;
-            console.log(`✅ Processed: ${article.title.substring(0, 50)}...`);
+            console.log(` Processed: ${article.title.substring(0, 50)}...`);
           } catch (error) {
             errorCount++;
             errors.push({
@@ -302,9 +282,7 @@ exports.processArticles = onRequest(
   }
 );
 
-/**
- * Get articles with optional category filter, sorting, and pagination
- */
+
 exports.getArticles = onRequest(
   { memory: "256MiB", timeoutSeconds: 60, cors: true },
   async (req, res) => {
@@ -344,10 +322,7 @@ exports.getArticles = onRequest(
   }
 );
 
-// ========== ENGAGEMENT ENDPOINTS (PUBLIC) ==========
-/**
- * Track article view
- */
+
 exports.trackView = onRequest(
   { memory: "128MiB", timeoutSeconds: 10, cors: true },
   async (req, res) => {
@@ -386,9 +361,7 @@ exports.trackView = onRequest(
   }
 );
 
-/**
- * Toggle like on article
- */
+
 exports.toggleLike = onRequest(
   { memory: "128MiB", timeoutSeconds: 10, cors: true },
   async (req, res) => {
@@ -427,9 +400,7 @@ exports.toggleLike = onRequest(
   }
 );
 
-/**
- * Track share
- */
+
 exports.trackShare = onRequest(
   { memory: "128MiB", timeoutSeconds: 10, cors: true },
   async (req, res) => {
@@ -468,10 +439,7 @@ exports.trackShare = onRequest(
   }
 );
 
-// ========== COMMENTS (PUBLIC) ==========
-/**
- * Add comment to article
- */
+
 exports.addComment = onRequest(
   { memory: "128MiB", timeoutSeconds: 10, cors: true },
   async (req, res) => {
@@ -522,9 +490,7 @@ exports.addComment = onRequest(
   }
 );
 
-/**
- * Get comments for article
- */
+
 exports.getComments = onRequest(
   { memory: "128MiB", timeoutSeconds: 30, cors: true },
   async (req, res) => {
@@ -565,10 +531,7 @@ exports.getComments = onRequest(
   }
 );
 
-// ========== SCHEDULED FUNCTIONS ==========
-/**
- * Scheduled: Fetch news every 2 hours
- */
+
 exports.scheduledFetchNews = onSchedule(
   {
     schedule: "every 2 hours",
@@ -577,7 +540,7 @@ exports.scheduledFetchNews = onSchedule(
     timeoutSeconds: 540,
   },
   async (event) => {
-    console.log("🔄 Scheduled news fetch started:", new Date().toISOString());
+    console.log("Scheduled news fetch started:", new Date().toISOString());
 
     try {
       const allArticles = await rssService.fetchAllArticles();
@@ -588,19 +551,17 @@ exports.scheduledFetchNews = onSchedule(
       );
 
       console.log(
-        `✅ Scheduled fetch complete: ${saveResult.saved} articles saved`
+        `Scheduled fetch complete: ${saveResult.saved} articles saved`
       );
       return null;
     } catch (error) {
-      console.error("❌ Error in scheduled fetch:", error);
+      console.error("Error in scheduled fetch:", error);
       return null;
     }
   }
 );
 
-/**
- * Scheduled: Process articles with AI every 30 minutes
- */
+
 exports.scheduledProcessArticles = onSchedule(
   {
     schedule: "every 30 minutes",
@@ -609,12 +570,12 @@ exports.scheduledProcessArticles = onSchedule(
     timeoutSeconds: 540,
   },
   async (event) => {
-    // Initialize AI and image services once per scheduled run
+   
     const aiService = new AIService(PROJECT_ID);
     const imageService = new ImageService(UNSPLASH_API_KEY, PEXELS_API_KEY);
 
     console.log(
-      "🤖 Scheduled AI processing started:",
+      " Scheduled AI processing started:",
       new Date().toISOString()
     );
 
@@ -666,19 +627,17 @@ exports.scheduledProcessArticles = onSchedule(
       }
 
       console.log(
-        `✅ Scheduled processing complete: ${processed} processed, ${skipped} skipped`
+        ` Scheduled processing complete: ${processed} processed, ${skipped} skipped`
       );
       return null;
     } catch (error) {
-      console.error("❌ Error in scheduled processing:", error);
+      console.error(" Error in scheduled processing:", error);
       return null;
     }
   }
 );
 
-/**
- * Scheduled: Cleanup old articles monthly
- */
+
 exports.scheduledCleanupOldArticles = onSchedule(
   {
     schedule: "0 4 1 * *", // At 4:00 AM on the 1st of every month
@@ -687,17 +646,17 @@ exports.scheduledCleanupOldArticles = onSchedule(
     timeoutSeconds: 300,
   },
   async (event) => {
-    console.log("🧹 Scheduled cleanup started:", new Date().toISOString());
+    console.log(" Scheduled cleanup started:", new Date().toISOString());
 
     try {
       const deletedCount = await storageService.deleteOldArticles(
         LIMITS.ARTICLE_RETENTION_DAYS
       );
 
-      console.log(`✅ Cleanup complete: ${deletedCount} old articles deleted`);
+      console.log(`Cleanup complete: ${deletedCount} old articles deleted`);
       return null;
     } catch (error) {
-      console.error("❌ Error in scheduled cleanup:", error);
+      console.error(" Error in scheduled cleanup:", error);
       return null;
     }
   }

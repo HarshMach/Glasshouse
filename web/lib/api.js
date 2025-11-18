@@ -1,7 +1,7 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || import.meta.env.NEXT_PUBLIC_API_BASE_URL;
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 if (!API_BASE) {
-  console.warn('VITE_API_BASE_URL (or NEXT_PUBLIC_API_BASE_URL) is not set. Frontend cannot reach backend.');
+  console.warn('VITE_API_BASE_URL is not set. Frontend cannot reach backend.');
 }
 
 async function handleResponse(res) {
@@ -20,7 +20,7 @@ export async function getArticles({ category = 'all', sortBy = 'recent', limit =
   if (cursor) url.searchParams.set('cursor', cursor);
 
   const res = await fetch(url.toString(), { cache: 'no-store' });
-  return handleResponse(res); // Should return { articles: [...], nextCursor: "..." }
+  return handleResponse(res); 
 }
 
 export async function searchArticles(query, limit = 50) {

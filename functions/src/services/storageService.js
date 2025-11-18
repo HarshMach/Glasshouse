@@ -1,7 +1,3 @@
-/**
- * Storage Service
- * Handles all Firestore database operations
- */
 
 const { COLLECTIONS, LIMITS } = require('../config/constants');
 const { generateHash } = require('../utils/helpers');
@@ -12,9 +8,7 @@ class StorageService {
     this.admin = admin;
   }
 
-  /**
-   * Save articles to Firestore in batches
-   */
+ 
   async saveArticles(articles) {
     if (!articles || !Array.isArray(articles) || articles.length === 0) {
       return { success: true, saved: 0, failed: 0, errors: [] };
@@ -44,7 +38,7 @@ class StorageService {
             pubDate: this.admin.firestore.Timestamp.fromDate(article.pubDate),
             fetchedAt: timestamp,
             processed: false,
-            // Initialize engagement metrics
+      
             likes: 0,
             shares: 0,
             views: 0,
@@ -66,7 +60,7 @@ class StorageService {
 
       if (currentBatch.length > 0) batchGroups.push(currentBatch);
 
-      // Commit all batches
+    
       for (let i = 0; i < batchGroups.length; i++) {
         const group = batchGroups[i];
         let retryCount = 0;
@@ -130,9 +124,7 @@ class StorageService {
     }
   }
 
-  /**
-   * Get unprocessed articles for AI processing
-   */
+ 
   async getUnprocessedArticles(limit = 50) {
     try {
       const snapshot = await this.db
@@ -157,9 +149,6 @@ class StorageService {
     }
   }
 
-  /**
-   * Update article with AI processing results
-   */
   async updateArticleWithAI(docRef, aiResult, imageData = null) {
     try {
       const updateData = {
@@ -172,7 +161,7 @@ class StorageService {
         processedAt: this.admin.firestore.FieldValue.serverTimestamp(),
       };
 
-      // Add image data if available
+
       if (imageData) {
         updateData.stockImage = imageData;
       }
@@ -184,20 +173,13 @@ class StorageService {
     }
   }
 
-  /**
-   * Get articles with filters and pagination
-   * Only returns AI-processed, quality articles that have both summary and dailyLifeImpact.
-   * Results can be ordered by recency (newest first) or popularity (engagement-based).
-   */
-  /**
- * Get articles with filters AND real Firestore pagination
- */
+
 async getArticles(options = {}) {
   const {
     category = null,
     sortBy = 'recent',
     limit = 50,
-    cursor = null, // renamed from startAfter for clarity
+    cursor = null, 
   } = options;
 
   try {
@@ -209,10 +191,9 @@ async getArticles(options = {}) {
       query = query.where('category', '==', category);
     }
 
-    // Base order for pagination
+    
     query = query.orderBy('pubDate', 'desc');
 
-    // Apply pagination cursor
     if (cursor) {
       const lastDoc = await this.db
         .collection(COLLECTIONS.ARTICLES)
@@ -224,7 +205,7 @@ async getArticles(options = {}) {
       }
     }
 
-    // Overfetch so AI filters don’t reduce results
+
     query = query.limit(limit * 2);
 
     const snapshot = await query.get();
@@ -235,7 +216,7 @@ async getArticles(options = {}) {
     for (const doc of rawDocs) {
       const data = doc.data();
 
-      // Skip invalid content
+    
       if (!data.summary) continue;
       if (data.category?.toLowerCase() === 'sports') continue;
 
@@ -247,11 +228,10 @@ async getArticles(options = {}) {
         processedAt: data.processedAt?.toDate().toISOString(),
       });
 
-      // Stop once clean limit reached
       if (articles.length >= limit) break;
     }
 
-    // Sorting logic
+ 
     if (sortBy === 'popular') {
       articles.sort((a, b) => {
         const engagementA =
@@ -270,7 +250,6 @@ async getArticles(options = {}) {
       articles.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
     }
 
-    // Determine next cursor
     const lastVisibleDoc = rawDocs[rawDocs.length - 1];
     const nextCursor = lastVisibleDoc ? lastVisibleDoc.id : null;
 
@@ -284,10 +263,7 @@ async getArticles(options = {}) {
     throw error;
   }
 }
-/**
- * Get articles with proper pagination support
- * This is the public-facing method that should be called from the API endpoint
- */
+
 async getArticlesPaginated({ category = 'all', sortBy = 'recent', limit = 20, cursor = null } = {}) {
   try {
     const articles = [];
@@ -299,7 +275,7 @@ async getArticlesPaginated({ category = 'all', sortBy = 'recent', limit = 20, cu
         .collection(COLLECTIONS.ARTICLES)
         .where('processed', '==', true)
         .orderBy('pubDate', 'desc')
-        .limit(limit * 2); // Overfetch
+        .limit(limit * 2); 
 
       if (category && category !== 'all') {
         query = query.where('category', '==', category);
@@ -315,7 +291,7 @@ async getArticlesPaginated({ category = 'all', sortBy = 'recent', limit = 20, cu
       for (const doc of snapshot.docs) {
         const data = doc.data();
 
-        // Skip invalid articles
+    
         if (!data.summary || data.category?.toLowerCase() === 'sports') continue;
 
         articles.push({
@@ -331,11 +307,11 @@ async getArticlesPaginated({ category = 'all', sortBy = 'recent', limit = 20, cu
 
       lastDoc = snapshot.docs[snapshot.docs.length - 1];
 
-      // Stop fetching if no more documents
+   
       if (!lastDoc || snapshot.docs.length === 0) keepFetching = false;
     }
 
-    // Sort by popularity if requested
+
     if (sortBy === 'popular') {
       articles.sort((a, b) => {
         const engagementA = (a.likes || 0) * 3 + (a.commentCount || 0) * 2 + (a.views || 0) * 0.1;
@@ -359,71 +335,7 @@ async getArticlesPaginated({ category = 'all', sortBy = 'recent', limit = 20, cu
   }
 }
 
-
-  /**
-   * Search articles with fuzzy matching
-   * Searches across title, category, and summary, tolerant to typos.
-   */
-  async searchArticles(searchQuery, limit = 50) {
-    try {
-      const snapshot = await this.db
-        .collection(COLLECTIONS.ARTICLES)
-        .where('processed', '==', true)
-        .orderBy('pubDate', 'desc')
-        .limit(limit * 3) // overfetch; we'll trim after fuzzy filtering
-        .get();
-
-      const allArticles = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        pubDate: doc.data().pubDate?.toDate().toISOString(),
-      }));
-
-      const query = searchQuery.toLowerCase();
-
-      const filtered = allArticles.filter((article) => {
-        // Only consider articles that have a summary (matches getArticles logic)
-        // Also filter out sports articles
-        if (!article.summary || article.category?.toLowerCase() === 'sports') return false;
-
-        const title = article.title || '';
-        const category = article.category || '';
-        const summary = article.summary || '';
-        const dailyLifeImpact = article.dailyLifeImpact || '';
-
-        // Basic substring matches first (fast path)
-        const titleMatch = title.toLowerCase().includes(query);
-        const categoryMatch = category.toLowerCase().includes(query);
-        const summaryMatch = summary.toLowerCase().includes(query);
-        const impactMatch = dailyLifeImpact.toLowerCase().includes(query);
-
-        if (titleMatch || categoryMatch || summaryMatch || impactMatch) {
-          return true;
-        }
-
-        // Fuzzy match as a slower fallback for typos
-        const { fuzzyMatch } = require('../utils/helpers');
-        const fuzzyTitle = fuzzyMatch(query, title, 0.7);
-        const fuzzyCategory = fuzzyMatch(query, category, 0.7);
-        const fuzzySummary = fuzzyMatch(query, summary, 0.75);
-        const fuzzyImpact = fuzzyMatch(query, dailyLifeImpact, 0.75);
-
-        return fuzzyTitle || fuzzyCategory || fuzzySummary || fuzzyImpact;
-      });
-
-      // Sort by most recent first
-      filtered.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
-
-      return filtered.slice(0, limit);
-    } catch (error) {
-      console.error('Error searching articles:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Increment view count
-   */
+ 
   async incrementViews(articleId) {
     try {
       await this.db
@@ -437,9 +349,7 @@ async getArticlesPaginated({ category = 'all', sortBy = 'recent', limit = 20, cu
     }
   }
 
-  /**
-   * Toggle like on article
-   */
+
   async toggleLike(articleId, userId) {
     try {
       const articleRef = this.db.collection(COLLECTIONS.ARTICLES).doc(articleId);
@@ -454,14 +364,14 @@ async getArticlesPaginated({ category = 'all', sortBy = 'recent', limit = 20, cu
       const isLiked = likedBy.includes(userId);
 
       if (isLiked) {
-        // Unlike
+     
         await articleRef.update({
           likes: this.admin.firestore.FieldValue.increment(-1),
           likedBy: this.admin.firestore.FieldValue.arrayRemove(userId),
         });
         return { liked: false, likes: (data.likes || 0) - 1 };
       } else {
-        // Like
+       
         await articleRef.update({
           likes: this.admin.firestore.FieldValue.increment(1),
           likedBy: this.admin.firestore.FieldValue.arrayUnion(userId),
@@ -474,9 +384,7 @@ async getArticlesPaginated({ category = 'all', sortBy = 'recent', limit = 20, cu
     }
   }
 
-  /**
-   * Increment share count
-   */
+
   async incrementShares(articleId) {
     try {
       await this.db
@@ -490,9 +398,7 @@ async getArticlesPaginated({ category = 'all', sortBy = 'recent', limit = 20, cu
     }
   }
 
-  /**
-   * Add comment to article
-   */
+ 
   async addComment(articleId, comment) {
     try {
       const commentRef = await this.db.collection(COLLECTIONS.COMMENTS).add({
@@ -502,7 +408,6 @@ async getArticlesPaginated({ category = 'all', sortBy = 'recent', limit = 20, cu
         reported: false,
       });
 
-      // Increment comment count on article
       await this.db
         .collection(COLLECTIONS.ARTICLES)
         .doc(articleId)
@@ -517,15 +422,12 @@ async getArticlesPaginated({ category = 'all', sortBy = 'recent', limit = 20, cu
     }
   }
 
-  /**
-   * Get comments for article
-   */
   async getComments(articleId, limit = 50) {
     try {
       const snapshot = await this.db
         .collection(COLLECTIONS.COMMENTS)
         .where('articleId', '==', articleId)
-        .where('reported', '==', false) // Don't show reported comments
+        .where('reported', '==', false) 
         .orderBy('createdAt', 'desc')
         .limit(limit)
         .get();
@@ -541,13 +443,11 @@ async getArticlesPaginated({ category = 'all', sortBy = 'recent', limit = 20, cu
     }
   }
 
-  /**
-   * Report content (article or comment)
-   */
+
   async reportContent(contentType, contentId, reason, reportedBy) {
     try {
       await this.db.collection(COLLECTIONS.REPORTS).add({
-        contentType, // 'article' or 'comment'
+        contentType,
         contentId,
         reason,
         reportedBy,
@@ -562,9 +462,6 @@ async getArticlesPaginated({ category = 'all', sortBy = 'recent', limit = 20, cu
     }
   }
 
-  /**
-   * Delete old articles
-   */
   async deleteOldArticles(retentionDays) {
     try {
       const cutoffDate = new Date();

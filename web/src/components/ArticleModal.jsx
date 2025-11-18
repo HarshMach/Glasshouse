@@ -142,9 +142,9 @@ export default function ArticleModal({ article, onClose }) {
         </button>
 
         <div className="flex h-full text-white">
-          {/* Left Section - 2/3 width */}
+      
           <div className="flex-1 flex flex-col p-6 overflow-y-auto scrollbar-hide">
-            {/* Source + Metadata */}
+         
             <div className="text-xs text-slate-400 flex flex-wrap gap-3 mb-6">
               <span className="rounded-full border border-black-700 px-2 py-0.5 uppercase tracking-wide">
                 {article.category || "General"}
@@ -159,9 +159,9 @@ export default function ArticleModal({ article, onClose }) {
               )}
             </div>
 
-            {/* 2 Column Layout for Title/Summary */}
+        
             <div className="grid grid-cols-2 gap-6 flex-1">
-              {/* Left Column: Title + Summary */}
+  
               <div className="flex flex-col">
                 <h1 className="text-3xl font-bold leading-tight">
                   {article.title}
@@ -171,7 +171,7 @@ export default function ArticleModal({ article, onClose }) {
                 </p>
               </div>
 
-              {/* Middle Column: Why this concerns you */}
+      
               <div className="border-l border-lime-400 pl-6">
                 <h2 className="text-2xl font-bold leading-snug">
                   Why this <br /> concerns you?
@@ -184,7 +184,7 @@ export default function ArticleModal({ article, onClose }) {
               </div>
             </div>
 
-            {/* Bottom Bar: Like, Share, Report, View Original */}
+          
             <div className="flex justify-between items-center text-white border-t border-gray-700 pt-4 mt-4 text-sm">
               <div className="flex gap-6 items-center">
                 {fullArticleUrl && (
@@ -206,7 +206,6 @@ export default function ArticleModal({ article, onClose }) {
             </div>
           </div>
 
-          {/* Right Column: Comments - Full Height */}
           <div className="w-1/3 bg-[#101010] border-l border-black flex flex-col">
             <h3 className="text-lg font-semibold text-white p-4 border-b border-black">
               Comments
@@ -232,7 +231,7 @@ export default function ArticleModal({ article, onClose }) {
               )}
             </div>
 
-            {/* Stats row - above the orange line */}
+       
             <div className="flex justify-start items-center p-4 text-white text-sm ">
               <div className="flex gap-6 items-center">
                 <button
@@ -251,7 +250,7 @@ export default function ArticleModal({ article, onClose }) {
               </div>
             </div>
 
-            {/* Add comment input */}
+       
             <form onSubmit={handleAddComment} className=" p-4 bg-[#181818]">
               <input
                 type="text"

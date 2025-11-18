@@ -1,11 +1,10 @@
-import React from "react";
-import { useState } from "react";
-import Menu from "../components/menu.jsx";
+
+import {React, useState } from "react";
 import Layout from "../components/layout.jsx";
-import Background from "../images/Background.png";
-import VectorW from "../images/VectorW.png";
 import Fists from "../images/Fists.png";
+
 const About = () => {
+
   const [bobbingConfig] = useState(() => ({
     Fists: {
       duration: `${3 + Math.random() * 3}s`, // 3–6s

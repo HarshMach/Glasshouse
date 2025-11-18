@@ -1,10 +1,10 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-const { AI_CONFIG, RATE_LIMITING, CATEGORIES } = require("../config/constants");
+const { AI_CONFIG, CATEGORIES } = require("../config/constants");
 const { delay, cleanHtml } = require("../utils/helpers");
 
 class AIService {
-  // projectId/location kept for backward compatibility; Gemini API key controls billing project
+
   constructor(projectId, location = "global", temperature = 0.5) {
     const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
     if (!apiKey) {
@@ -13,11 +13,11 @@ class AIService {
       );
     }
 
-    console.log("🚀 Initializing Gemini API client");
+    console.log(" Initializing Gemini API client");
 
     this.genAI = new GoogleGenerativeAI(apiKey);
     this.model = this.genAI.getGenerativeModel({
-      model: "gemini-2.0-flash", // Gemini API model name
+      model: "gemini-2.0-flash", 
       generationConfig: {
         temperature: temperature,
       },
@@ -30,13 +30,13 @@ class AIService {
     const now = Date.now();
     const elapsed = now - this.lastRequestTime;
 
-    // Reset minute counter if needed
+
     if (elapsed > 60000) this.requestCount = 0;
 
-    // Paid Tier 1: 2,000 RPM
+
     if (this.requestCount >= 2000) {
       const waitTime = 60000 - elapsed;
-      console.log(`⏳ Rate limit reached, waiting ${waitTime}ms`);
+      console.log(`Rate limit reached, waiting ${waitTime}ms`);
       await delay(waitTime);
       this.requestCount = 0;
     }
@@ -44,7 +44,7 @@ class AIService {
     await delay(500);
     this.requestCount++;
     this.lastRequestTime = Date.now();
-    console.log(`📊 Vertex AI usage: ${this.requestCount}/2000 per minute`);
+    console.log(` AI usage: ${this.requestCount}/2000 per minute`);
   }
   async detectCategory(article) {
     try {
@@ -61,12 +61,11 @@ Respond with ONLY the category name, nothing else.`;
       const result = await this.model.generateContent(prompt);
       const detectedCategory = result.response.text().trim().toLowerCase();
 
-      // Validate that it's a real category
       if (Object.values(CATEGORIES).includes(detectedCategory)) {
         return detectedCategory;
       }
 
-      // Fall back to original category
+    
       return article.category || CATEGORIES.GENERAL;
     } catch (error) {
       console.error("Error detecting category:", error);
@@ -80,7 +79,7 @@ Respond with ONLY the category name, nothing else.`;
       const content = cleanHtml(
         article.combinedDescription || article.description
       );
-      // FREE external context
+      
 
       const prompt = `You are a professional news summarizer and visual editor for "The GlassHouse" - a news platform that provides clear, actionable insights.
 Use:
@@ -120,7 +119,7 @@ Content: ${content}
       const result = await this.model.generateContent(prompt);
       let raw = result.response.text().trim();
 
-      // Strip markdown fences if the model added them
+   
       raw = raw
         .replace(/```json/gi, "")
         .replace(/```/g, "")
@@ -134,7 +133,7 @@ Content: ${content}
           "Could not parse JSON from summary/imagePrompt response:",
           raw
         );
-        // Fallback: treat whole text as summary, no imagePrompt
+   
         const fallbackSummary =
           raw.length > AI_CONFIG.SUMMARY_MAX_LENGTH
             ? raw.substring(0, AI_CONFIG.SUMMARY_MAX_LENGTH) + "..."
@@ -195,7 +194,7 @@ Provide 2-3 sentences of impact. If truly irrelevant, respond "N/A".`;
       let result = await this.model.generateContent(prompt);
       let impact = result.response.text().trim();
 
-      // If output is too short or N/A, attempt secondary analysis
+    
       if (!impact || impact === "N/A" || impact.length < 10) {
         console.log(`Generating secondary/global impact for: ${article.title}`);
         prompt = `The previous article had no direct daily impact. Analyze potential indirect impacts:
@@ -220,9 +219,7 @@ Be concise, 2-3 sentences.`;
     }
   }
 
-  /**
-   * Validation function: ensures summary and daily impact aren't just repeating description
-   */
+
   validateSummaryAndImpact(article, summary, impact) {
     const description = (article.description || "").toLowerCase();
     const sumLower = (summary || "").toLowerCase();
@@ -279,7 +276,7 @@ Your rating:`;
     } catch (error) {
       if (error.message === "Daily quota exceeded") {
         console.warn(
-          "⚠️ Gemini API daily quota exceeded - using fallback quality evaluation"
+          "Gemini API daily quota exceeded - using fallback quality evaluation"
         );
         return {
           score: 5,
@@ -296,7 +293,7 @@ Your rating:`;
     }
   }
 
-  // processArticle() can call validateSummaryAndImpact before sending to DB
+
   async processArticle(article) {
     const result = {
       shouldPublish: false,
@@ -325,7 +322,7 @@ Your rating:`;
         summary
       );
 
-      // Validate summary & impact
+
       const validation = this.validateSummaryAndImpact(
         article,
         summary,

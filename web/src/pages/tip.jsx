@@ -2,12 +2,13 @@ import React, { useState, useEffect } from "react";
 import emailjs from "@emailjs/browser";
 import Layout from "../components/layout.jsx";
 import { Select, Option } from "@material-tailwind/react";
-
+import Phone from "../images/phone-man.png";
+import Bill from "../images/bill.gif";
 const GotATip = () => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    subject: "news-tip",
+    subject: "",
     message: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -36,23 +37,22 @@ const GotATip = () => {
         from_email: formData.email,
         subject: formData.subject,
         message: formData.message,
-        to_email: "pulkeshee@gmail.com",
+      
       };
 
-      // Send email to yourself (admin notification)
       await emailjs.send(
-        process.env.REACT_APP_EMAILJS_SERVICE_ID,           // Your Service ID
-        process.env.REACT_APP_EMAILJS_ADMIN_TEMPLATE_ID,    // Template for YOU to receive
+        process.env.REACT_APP_EMAILJS_SERVICE_ID,           
+        process.env.REACT_APP_EMAILJS_ADMIN_TEMPLATE_ID,    
         templateParams,
-        process.env.REACT_APP_EMAILJS_PUBLIC_KEY            // Your Public Key
+        process.env.REACT_APP_EMAILJS_PUBLIC_KEY          
       );
 
-      // Send auto-reply to user
+    
       await emailjs.send(
-        process.env.REACT_APP_EMAILJS_SERVICE_ID,           // Same Service ID
-        process.env.REACT_APP_EMAILJS_AUTOREPLY_TEMPLATE_ID, // Template for auto-reply
+        process.env.REACT_APP_EMAILJS_SERVICE_ID,           
+        process.env.REACT_APP_EMAILJS_AUTOREPLY_TEMPLATE_ID, 
         templateParams,
-        process.env.REACT_APP_EMAILJS_PUBLIC_KEY            // Same Public Key
+        process.env.REACT_APP_EMAILJS_PUBLIC_KEY          
       );
 
       setSubmitStatus("success");
@@ -80,10 +80,10 @@ const GotATip = () => {
         <div className="grid grid-cols-2 gap-12">
           <div className="flex flex-col">
             <div className="mb-12 relative">
-              <h1 className="text-[150px] -mt-20 text-[#99FF00] leading-tight">
+              <h1 className="text-[150px] -mt-20 text-[#FF6B35] leading-tight">
                 GOT A
               </h1>
-              <h1 className="text-[150px] -mt-16 text-[#99FF00] leading-tight">
+              <h1 className="text-[150px] -mt-16 text-[#FF6B35] leading-tight">
                 TIP?
               </h1>
             </div>
@@ -128,7 +128,7 @@ const GotATip = () => {
                   value={formData.name}
                   onChange={handleChange}
                   placeholder="Name"
-                  className="flex-1 px-5 py-4 caret-[#99FF00] bg-slate-600/30 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#99FF00]"
+                  className="flex-1 px-5 py-4 caret-[#99FF00] bg-slate-500/30 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#99FF00]"
                   required
                 />
                 <input
@@ -137,7 +137,7 @@ const GotATip = () => {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="Email"
-                  className="flex-1 px-5 py-4 caret-[#99FF00] bg-slate-600/30 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#99FF00]"
+                  className="flex-1 px-5 py-4 caret-[#99FF00] bg-slate-500/30 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#99FF00]"
                   required
                 />
               </div>
@@ -152,7 +152,7 @@ const GotATip = () => {
                   onChange={(value) => handleChange({ target: { name: "subject", value } })}
                   onFocus={() => setFocusedField("subject")}
                   onBlur={() => setFocusedField(null)}
-                  className="w-full max-w-[730px] bg-slate-600/30 border-2 border-gray-700 text-white focus:border-[#99FF00] focus:bg-slate-600/30 outline-none transition-all duration-300 appearance-none !pr-5 pb-5"
+                  className="w-full max-w-[730px] bg-slate-500/30 border-2 border-gray-700 text-white focus:border-[#99FF00] focus:bg-slate-600/30 outline-none transition-all duration-300 appearance-none !pr-5 pb-5"
                   labelProps={{ 
                     className: "text-white peer-placeholder-shown:!left-5 !left-5" 
                   }}
@@ -183,7 +183,7 @@ const GotATip = () => {
                   onChange={handleChange}
                   rows="8"
                   placeholder="Your message..."
-                  className="flex-1 px-5 py-4 caret-[#FF6B35] bg-slate-600/30 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#FF6B35] resize-none"
+                  className="flex-1 px-5 py-4 caret-[#FF6B35] bg-slate-500/30 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#FF6B35] resize-none"
                   required
                 />
                 <button
@@ -197,6 +197,35 @@ const GotATip = () => {
             </form>
           </div>
         </div>
+        
+ <img
+              src={Phone}
+              alt=""
+              className="absolute animate-bob"
+              style={{
+                top: "20%",
+                right: "1%",
+                width: "20%",
+
+                opacity: 1,
+                rotate: "-10deg",
+              }}
+        />
+        
+        <img
+              src={Bill}
+              alt=""
+              className="absolute"
+              style={{
+                bottom: "-30%",
+                right: "20%",
+                width: "20%",
+
+                opacity: 1,
+           
+              }}
+            />
+
       </Layout>
     </div>
   );

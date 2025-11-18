@@ -1,7 +1,4 @@
-/**
- * RSS Feed Service
- * Handles fetching and parsing RSS feeds with circuit breaker pattern
- */
+
 
 const Parser = require('rss-parser');
 const { RSS_SOURCES, LIMITS, CIRCUIT_BREAKER, COLLECTIONS } = require('../config/constants');
@@ -13,9 +10,7 @@ class RSSService {
     this.parser = new Parser();
   }
 
-  /**
-   * Check if a source should be skipped due to circuit breaker
-   */
+  
   async shouldSkipSource(sourceName) {
     try {
       const stateDoc = await this.db
@@ -48,9 +43,7 @@ class RSSService {
     }
   }
 
-  /**
-   * Record a source failure
-   */
+
   async recordSourceFailure(sourceName) {
     try {
       const stateRef = this.db.collection(COLLECTIONS.CIRCUIT_BREAKER).doc(sourceName);
@@ -74,9 +67,7 @@ class RSSService {
     }
   }
 
-  /**
-   * Record a source success
-   */
+ 
   async recordSourceSuccess(sourceName) {
     try {
       const stateRef = this.db.collection(COLLECTIONS.CIRCUIT_BREAKER).doc(sourceName);
@@ -91,9 +82,7 @@ class RSSService {
     }
   }
 
-  /**
-   * Fetch articles from a single RSS source
-   */
+ 
   async fetchFromSource(source) {
     if (await this.shouldSkipSource(source.name)) {
       return [];
@@ -176,9 +165,7 @@ class RSSService {
     }
   }
 
-  /**
-   * Fetch articles from all RSS sources in batches
-   */
+
   async fetchAllArticles() {
     const allArticles = [];
     const startTime = Date.now();
@@ -218,7 +205,7 @@ class RSSService {
         }
       });
 
-      // Delay between batches
+      
       if (i + batchSize < RSS_SOURCES.length) {
         await delay(1000);
       }

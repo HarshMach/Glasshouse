@@ -1,13 +1,8 @@
-/**
- * Utility helper functions
- */
+
 
 const crypto = require('crypto');
 const { URL } = require('url');
 
-/**
- * Validates if a URL is a valid RSS feed URL
- */
 function isValidRSSUrl(url) {
   try {
     if (!url || typeof url !== 'string') return false;
@@ -41,9 +36,7 @@ function isValidRSSUrl(url) {
   }
 }
 
-/**
- * Validates if a string is a valid URL
- */
+
 function isValidUrl(url) {
   try {
     if (!url || typeof url !== 'string') return false;
@@ -54,9 +47,7 @@ function isValidUrl(url) {
   }
 }
 
-/**
- * Sanitizes RSS item data to prevent XSS and malicious content
- */
+
 function sanitizeRSSItem(item) {
   if (!item || typeof item !== 'object') {
     return {};
@@ -110,9 +101,7 @@ function sanitizeRSSItem(item) {
   }
 }
 
-/**
- * Cleans HTML and extra whitespace from text
- */
+
 function cleanText(text) {
   if (!text || typeof text !== 'string') return '';
   return text
@@ -121,9 +110,7 @@ function cleanText(text) {
     .trim();
 }
 
-/**
- * Extracts image URL from RSS item
- */
+
 function extractImageUrl(item) {
   if (!item) return null;
   if (item.enclosure?.url) return item.enclosure.url;
@@ -135,9 +122,7 @@ function extractImageUrl(item) {
   return imgMatch ? imgMatch[1] : null;
 }
 
-/**
- * Generates a unique hash from a string
- */
+
 function generateHash(str) {
   try {
     if (!str || typeof str !== 'string') {
@@ -160,9 +145,7 @@ function generateHash(str) {
   }
 }
 
-/**
- * Extracts keywords from text for searching and categorization
- */
+
 function extractKeywords(text, limit = 5) {
   if (!text || typeof text !== 'string') return [];
 
@@ -180,29 +163,25 @@ function extractKeywords(text, limit = 5) {
     .split(/\s+/)
     .filter((w) => w.length > 3 && !stopWords.has(w));
 
-  // Count word frequency
+  
   const wordCount = {};
   words.forEach((word) => {
     wordCount[word] = (wordCount[word] || 0) + 1;
   });
 
-  // Sort by frequency and return top keywords
+ 
   return Object.entries(wordCount)
     .sort((a, b) => b[1] - a[1])
     .slice(0, limit)
     .map((entry) => entry[0]);
 }
 
-/**
- * Delays execution for a specified time
- */
+
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/**
- * Validates API key
- */
+
 function verifyApiKey(req, validApiKey) {
   if (!validApiKey) {
     console.warn('API_KEY not configured - authentication disabled');
@@ -212,84 +191,29 @@ function verifyApiKey(req, validApiKey) {
   return apiKey === validApiKey;
 }
 
-/**
- * Gets client IP address
- */
+
 function getClientIp(req) {
   return req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'unknown';
 }
 
-/**
- * Fuzzy search implementation using Levenshtein distance
- */
-function fuzzyMatch(str1, str2, threshold = 0.7) {
-  const s1 = str1.toLowerCase();
-  const s2 = str2.toLowerCase();
 
-  // Quick exact match check
-  if (s1 === s2) return true;
-  if (s1.includes(s2) || s2.includes(s1)) return true;
 
-  // Levenshtein distance
-  const matrix = [];
-  const len1 = s1.length;
-  const len2 = s2.length;
-
-  for (let i = 0; i <= len2; i++) {
-    matrix[i] = [i];
-  }
-
-  for (let j = 0; j <= len1; j++) {
-    matrix[0][j] = j;
-  }
-
-  for (let i = 1; i <= len2; i++) {
-    for (let j = 1; j <= len1; j++) {
-      if (s2.charAt(i - 1) === s1.charAt(j - 1)) {
-        matrix[i][j] = matrix[i - 1][j - 1];
-      } else {
-        matrix[i][j] = Math.min(
-          matrix[i - 1][j - 1] + 1,
-          matrix[i][j - 1] + 1,
-          matrix[i - 1][j] + 1
-        );
-      }
-    }
-  }
-
-  const distance = matrix[len2][len1];
-  const maxLen = Math.max(len1, len2);
-  const similarity = 1 - distance / maxLen;
-
-  return similarity >= threshold;
-}
-
-/**
- * Strong HTML cleaner: removes tags, links, "continue reading", and boilerplate
- */
 function cleanHtml(html) {
   if (!html || typeof html !== 'string') return '';
 
   return html
 
-    // Remove all HTML tags
+  
     .replace(/<[^>]+>/g, ' ')
 
-    // Remove URLs
     .replace(/https?:\/\/\S+/gi, '')
-
-    // Remove common "read more" patterns
     .replace(/continue reading.*/gi, '')
     .replace(/read more.*/gi, '')
     .replace(/click here.*/gi, '')
-
-    // Remove HTML entities
     .replace(/&nbsp;/gi, ' ')
     .replace(/&amp;/gi, '&')
     .replace(/&quot;/gi, '"')
     .replace(/&#39;/gi, "'")
-
-    // Collapse multiple spaces
     .replace(/\s+/g, ' ')
     .trim();
 }

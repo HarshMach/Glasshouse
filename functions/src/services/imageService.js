@@ -1,7 +1,4 @@
-/**
- * Image Service
- * Fetches stock images from Unsplash or Pexels based on article keywords
- */
+
 
 const { IMAGE_CONFIG } = require('../config/constants');
 
@@ -11,9 +8,7 @@ class ImageService {
     this.pexelsKey = pexelsKey;
   }
 
-  /**
-   * Fetch image from Unsplash
-   */
+
   async fetchFromUnsplash(query) {
     if (!this.unsplashKey) {
       return null;
@@ -53,9 +48,7 @@ class ImageService {
     }
   }
 
-  /**
-   * Fetch image from Pexels
-   */
+
   async fetchFromPexels(query) {
     if (!this.pexelsKey) {
       return null;
@@ -94,19 +87,16 @@ class ImageService {
     }
   }
 
-  /**
-   * Get image for article based on keywords
-   * Tries Unsplash first, then Pexels, then fallback
-   */
+
   async getImageForArticle(keywords, category) {
-    // Try with specific keywords first
+
     let image = await this.fetchFromUnsplash(keywords);
     if (image) return image;
 
     image = await this.fetchFromPexels(keywords);
     if (image) return image;
 
-    // Try with just category
+  
     if (category && category !== 'general') {
       image = await this.fetchFromUnsplash(category);
       if (image) return image;
@@ -115,7 +105,7 @@ class ImageService {
       if (image) return image;
     }
 
-    // Try with fallback query
+    
     image = await this.fetchFromUnsplash(IMAGE_CONFIG.FALLBACK_QUERY);
     if (image) return image;
 
@@ -125,9 +115,7 @@ class ImageService {
     return null;
   }
 
-  /**
-   * Trigger download tracking for Unsplash (required by API guidelines)
-   */
+
   async trackUnsplashDownload(downloadLocation) {
     if (!this.unsplashKey || !downloadLocation) return;
 
