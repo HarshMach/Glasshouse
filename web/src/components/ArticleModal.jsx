@@ -30,6 +30,7 @@ export default function ArticleModal({ article, onClose }) {
   const [likes, setLikes] = useState(article.likes ?? 0);
   const [reportReason, setReportReason] = useState("");
   const [reporting, setReporting] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   useEffect(() => {
     if (!article) return;
@@ -119,6 +120,7 @@ export default function ArticleModal({ article, onClose }) {
         reportedBy: userId,
       });
       setReportReason("");
+      setShowReportModal(false);
       alert("Thank you for your report.");
     } catch (e) {
       console.error("Failed to report", e);
@@ -142,9 +144,7 @@ export default function ArticleModal({ article, onClose }) {
         </button>
 
         <div className="flex h-full text-white">
-      
           <div className="flex-1 flex flex-col p-6 overflow-y-auto scrollbar-hide">
-         
             <div className="text-xs text-slate-400 flex flex-wrap gap-3 mb-6">
               <span className="rounded-full border border-black-700 px-2 py-0.5 uppercase tracking-wide">
                 {article.category || "General"}
@@ -159,9 +159,7 @@ export default function ArticleModal({ article, onClose }) {
               )}
             </div>
 
-        
             <div className="grid grid-cols-2 gap-6 flex-1">
-  
               <div className="flex flex-col">
                 <h1 className="text-3xl font-bold leading-tight">
                   {article.title}
@@ -171,7 +169,6 @@ export default function ArticleModal({ article, onClose }) {
                 </p>
               </div>
 
-      
               <div className="border-l border-lime-400 pl-6">
                 <h2 className="text-2xl font-bold leading-snug">
                   Why this <br /> concerns you?
@@ -184,7 +181,6 @@ export default function ArticleModal({ article, onClose }) {
               </div>
             </div>
 
-          
             <div className="flex justify-between items-center text-white border-t border-gray-700 pt-4 mt-4 text-sm">
               <div className="flex gap-6 items-center">
                 {fullArticleUrl && (
@@ -197,6 +193,12 @@ export default function ArticleModal({ article, onClose }) {
                     View Original Source
                   </a>
                 )}
+                <button
+                  onClick={() => setShowReportModal(true)}
+                  className="flex items-center gap-1 text-white hover:text-yellow-400"
+                >
+                  Report
+                </button>
               </div>
 
               <div className="text-xs text-slate-400 flex gap-3">
@@ -231,7 +233,6 @@ export default function ArticleModal({ article, onClose }) {
               )}
             </div>
 
-       
             <div className="flex justify-start items-center p-4 text-white text-sm ">
               <div className="flex gap-6 items-center">
                 <button
@@ -250,7 +251,6 @@ export default function ArticleModal({ article, onClose }) {
               </div>
             </div>
 
-       
             <form onSubmit={handleAddComment} className=" p-4 bg-[#181818]">
               <input
                 type="text"
@@ -263,6 +263,48 @@ export default function ArticleModal({ article, onClose }) {
           </div>
         </div>
       </div>
+
+      {/* Report Modal */}
+      {showReportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+          <div className="w-full max-w-md bg-black border border-white/20 rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">
+              Report Summary Issue
+            </h3>
+            <p className="text-sm text-slate-300 mb-4">
+              Why do you think this summary is wrong?
+            </p>
+            <form onSubmit={handleReport}>
+              <textarea
+                value={reportReason}
+                onChange={(e) => setReportReason(e.target.value)}
+                placeholder="Please describe the issue with the summary..."
+                className="w-full h-24 bg-transparent text-white placeholder-slate-500 border border-white/20 rounded p-3 focus:outline-none focus:border-lime-400 resize-none"
+                required
+              />
+              <div className="flex gap-3 mt-4">
+                <button
+                  type="submit"
+                  disabled={reporting || !reportReason.trim()}
+                  className="flex-1 bg-lime-400 text-black font-semibold py-2 rounded hover:bg-lime-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {reporting ? "Submitting..." : "Submit Report"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowReportModal(false);
+                    setReportReason("");
+                  }}
+                  className="flex-1 bg-transparent text-white border border-white/20 py-2 rounded hover:bg-white/10"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
