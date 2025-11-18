@@ -1,4 +1,4 @@
-# The GlassHouse – AI Powered News Backend
+# The GlassHouse – AI Powered News 
 
 This repository contains the backend for The GlassHouse, an AI powered news platform that curates, analyzes, and enhances news from reputable sources. The goal is to give readers clear, concise, and practical insights into how the news affects their daily lives.
 
