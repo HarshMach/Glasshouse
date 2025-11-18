@@ -189,7 +189,7 @@ const GotATip = () => {
                 <button
                   type="submit"
                   disabled={isSubmitting || !formData.message.trim()}
-                  className="bg-[#FF6A00] hover:bg-[#FF8A35] text-black font-black px-6 py-3 lg:py-3 transition w-full lg:w-auto lg:mt-44 text-base lg:text-lg"
+                  className="bg-[#FF6A00] hover:bg-[#FF8A35] text-black font-black px-6 py-3 lg:py-3 transition w-full lg:w-auto lg:mt-36 text-base lg:text-lg"
                 >
                   {isSubmitting ? "SENDING..." : "SEND"}
                 </button>
@@ -215,7 +215,7 @@ const GotATip = () => {
         <img
           src={Bill}
           alt=""
-          className="hidden lg:block absolute"
+          className="hidden lg:block absolute overflow-hidden"
           style={{
             bottom: "-30%",
             right: "20%",
