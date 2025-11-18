@@ -37,22 +37,20 @@ const GotATip = () => {
         from_email: formData.email,
         subject: formData.subject,
         message: formData.message,
-      
       };
 
       await emailjs.send(
-        process.env.REACT_APP_EMAILJS_SERVICE_ID,           
-        process.env.REACT_APP_EMAILJS_ADMIN_TEMPLATE_ID,    
+        process.env.REACT_APP_EMAILJS_SERVICE_ID,
+        process.env.REACT_APP_EMAILJS_ADMIN_TEMPLATE_ID,
         templateParams,
-        process.env.REACT_APP_EMAILJS_PUBLIC_KEY          
+        process.env.REACT_APP_EMAILJS_PUBLIC_KEY
       );
 
-    
       await emailjs.send(
-        process.env.REACT_APP_EMAILJS_SERVICE_ID,           
-        process.env.REACT_APP_EMAILJS_AUTOREPLY_TEMPLATE_ID, 
+        process.env.REACT_APP_EMAILJS_SERVICE_ID,
+        process.env.REACT_APP_EMAILJS_AUTOREPLY_TEMPLATE_ID,
         templateParams,
-        process.env.REACT_APP_EMAILJS_PUBLIC_KEY          
+        process.env.REACT_APP_EMAILJS_PUBLIC_KEY
       );
 
       setSubmitStatus("success");
@@ -64,7 +62,6 @@ const GotATip = () => {
       setIsSubmitting(false);
     }
   };
-
 
   const subjectOptions = [
     { value: "news-tip", label: "Submit a News Tip" },
@@ -80,10 +77,10 @@ const GotATip = () => {
         <div className="grid grid-cols-2 gap-12">
           <div className="flex flex-col">
             <div className="mb-12 relative">
-              <h1 className="text-[150px] -mt-20 text-[#FF6B35] leading-tight">
+              <h1 className="md:text-[150px] text-6xl md:-mt-20 text-[#FF6B35] leading-tight">
                 GOT A
               </h1>
-              <h1 className="text-[150px] -mt-16 text-[#FF6B35] leading-tight">
+              <h1 className="md:text-[150px] text-6xl md:-mt-16 text-[#FF6B35] leading-tight">
                 TIP?
               </h1>
             </div>
@@ -103,7 +100,9 @@ const GotATip = () => {
                 <div>
                   <p
                     className={`font-bold text-xl mb-1 ${
-                      submitStatus === "success" ? "text-[#99FF00]" : "text-[#FF6B35]"
+                      submitStatus === "success"
+                        ? "text-[#99FF00]"
+                        : "text-[#FF6B35]"
                     }`}
                   >
                     {submitStatus === "success"
@@ -149,18 +148,22 @@ const GotATip = () => {
                   placeholder="What is this about?"
                   value={formData.subject}
                   variant="outlined"
-                  onChange={(value) => handleChange({ target: { name: "subject", value } })}
+                  onChange={(value) =>
+                    handleChange({ target: { name: "subject", value } })
+                  }
                   onFocus={() => setFocusedField("subject")}
                   onBlur={() => setFocusedField(null)}
                   className="w-full max-w-[730px] bg-slate-500/30 border-2 border-gray-700 text-white focus:border-[#99FF00] focus:bg-slate-600/30 outline-none transition-all duration-300 appearance-none !pr-5 pb-5"
-                  labelProps={{ 
-                    className: "text-white peer-placeholder-shown:!left-5 !left-5" 
+                  labelProps={{
+                    className:
+                      "text-white peer-placeholder-shown:!left-5 !left-5",
                   }}
                   containerProps={{
-                    className: "!min-w-0"
+                    className: "!min-w-0",
                   }}
                   menuProps={{
-                    className: "bg-black border border-[#99FF00] text-white py-1 mt-1",
+                    className:
+                      "bg-black border border-[#99FF00] text-white py-1 mt-1",
                   }}
                   arrow={false}
                 >
@@ -197,35 +200,33 @@ const GotATip = () => {
             </form>
           </div>
         </div>
-        
- <img
-              src={Phone}
-              alt=""
-              className="absolute animate-bob"
-              style={{
-                top: "20%",
-                right: "1%",
-                width: "20%",
 
-                opacity: 1,
-                rotate: "-10deg",
-              }}
-        />
-        
         <img
-              src={Bill}
-              alt=""
-              className="absolute"
-              style={{
-                bottom: "-30%",
-                right: "20%",
-                width: "20%",
+          src={Phone}
+          alt=""
+          className="absolute animate-bob"
+          style={{
+            top: "20%",
+            right: "1%",
+            width: "20%",
 
-                opacity: 1,
-           
-              }}
-            />
+            opacity: 1,
+            rotate: "-10deg",
+          }}
+        />
 
+        <img
+          src={Bill}
+          alt=""
+          className="absolute"
+          style={{
+            bottom: "-30%",
+            right: "20%",
+            width: "20%",
+
+            opacity: 1,
+          }}
+        />
       </Layout>
     </div>
   );

@@ -18,11 +18,10 @@ const CATEGORIES = [
 const Menu = ({ onCategoryChange, currentCategory = "all" }) => {
   const [isOpen, setIsOpen] = useState(false);
 
-
   const [bobbingConfig] = useState(() => ({
     donald: {
-      duration: `${3 + Math.random() * 3}s`, 
-      delay: `${Math.random() * 2}s`, 
+      duration: `${3 + Math.random() * 3}s`,
+      delay: `${Math.random() * 2}s`,
     },
     mark: {
       duration: `${3 + Math.random() * 3}s`,
@@ -70,7 +69,6 @@ const Menu = ({ onCategoryChange, currentCategory = "all" }) => {
 
   return (
     <>
- 
       <button
         onClick={toggleMenu}
         className="fixed top-6 right-8 z-50 flex flex-col space-y-1.5 p-0 bg-transparent"
@@ -93,16 +91,14 @@ const Menu = ({ onCategoryChange, currentCategory = "all" }) => {
         ></span>
       </button>
 
- 
       <div
-        className={`fixed inset-y-0 right-0 w-1/2 bg-[#B8FF4D] transform transition-transform duration-500 ease-in-out z-40 ${
+        className={`fixed inset-y-0 right-0 w-full md:w-1/2 bg-[#B8FF4D] transform transition-transform duration-500 ease-in-out z-40 ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="navigation-title"
       >
-        
         <h2 id="navigation-title" className="sr-only">
           Categories Menu
         </h2>
@@ -183,14 +179,16 @@ const Menu = ({ onCategoryChange, currentCategory = "all" }) => {
             />
           </div>
 
-       
           <nav
-            className="main-navigation-section flex-1 flex flex-col justify-center items-center text-center px-8 "
+            className="main-navigation-section flex-1 flex flex-col justify-center items-center text-center px-8  "
             role="navigation"
             aria-label="Categories navigation"
             onClick={(e) => e.stopPropagation()}
           >
-            <ul className="navigation-menu space-y-4 w-full" role="list">
+            <ul
+              className="navigation-menu space-y-4 md:w-full lg:w-full w-34"
+              role="list"
+            >
               {CATEGORIES.map((category) => (
                 <li
                   key={category.id}
@@ -225,7 +223,6 @@ const Menu = ({ onCategoryChange, currentCategory = "all" }) => {
             </ul>
           </nav>
 
-      
           <footer className="navigation-footer pb-4 flex justify-center space-x-4 text-black text-sm">
             <Link to="/about" style={{ textDecoration: "none" }}>
               ABOUT
