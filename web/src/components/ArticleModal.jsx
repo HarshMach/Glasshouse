@@ -195,7 +195,7 @@ export default function ArticleModal({ article, onClose }) {
                 )}
                 <button
                   onClick={() => setShowReportModal(true)}
-                  className="flex items-center gap-1 text-white hover:text-yellow-400"
+                  className="flex items-center gap-1 text-white hover:text-[#B8FF4D]"
                 >
                   Report
                 </button>
