@@ -1,10 +1,8 @@
-
-import {React, useState } from "react";
+import { React, useState } from "react";
 import Layout from "../components/layout.jsx";
 import Fists from "../images/Fists.png";
 
 const About = () => {
-
   const [bobbingConfig] = useState(() => ({
     Fists: {
       duration: `${3 + Math.random() * 3}s`, // 3–6s
@@ -17,7 +15,7 @@ const About = () => {
       <Layout>
         {/* About Content */}
         <div className="max-w-5xl mx-auto relative">
-          <h1 className="text-8xl bg-[#FF6A00] font-medium text-center text-black mt-10 mb-20">
+          <h1 className="md:text-8xl lg:text-8xl text-6xl bg-[#FF6A00] font-medium text-center text-black mt-10 mb-20">
             Because Power Belongs <br></br>To The Informed
           </h1>
 

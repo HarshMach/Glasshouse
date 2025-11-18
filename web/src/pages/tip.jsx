@@ -41,17 +41,17 @@ const GotATip = () => {
       };
 
       await emailjs.send(
-        process.env.REACT_APP_EMAILJS_SERVICE_ID,           
-        process.env.REACT_APP_EMAILJS_ADMIN_TEMPLATE_ID,    
+        process.env.REACT_APP_EMAILJS_SERVICE_ID,
+        process.env.REACT_APP_EMAILJS_ADMIN_TEMPLATE_ID,
         templateParams,
-        process.env.REACT_APP_EMAILJS_PUBLIC_KEY          
+        process.env.REACT_APP_EMAILJS_PUBLIC_KEY
       );
 
       await emailjs.send(
-        process.env.REACT_APP_EMAILJS_SERVICE_ID,           
-        process.env.REACT_APP_EMAILJS_AUTOREPLY_TEMPLATE_ID, 
+        process.env.REACT_APP_EMAILJS_SERVICE_ID,
+        process.env.REACT_APP_EMAILJS_AUTOREPLY_TEMPLATE_ID,
         templateParams,
-        process.env.REACT_APP_EMAILJS_PUBLIC_KEY          
+        process.env.REACT_APP_EMAILJS_PUBLIC_KEY
       );
 
       setSubmitStatus("success");
@@ -77,12 +77,11 @@ const GotATip = () => {
       <Layout currentCategory="all">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 px-4 lg:px-0">
           <div className="flex flex-col">
-            {/* Header */}
-            <div className="mb-8 lg:mb-12 relative">
-              <h1 className="text-[60px] lg:text-[150px] -mt-8 lg:-mt-20 text-[#FF6B35] leading-[0.9] lg:leading-tight">
+            <div className="mb-12 relative">
+              <h1 className="md:text-[150px] text-6xl md:-mt-20 text-[#FF6B35] leading-tight">
                 GOT A
               </h1>
-              <h1 className="text-[60px] lg:text-[150px] -mt-4 lg:-mt-16 text-[#FF6B35] leading-[0.9] lg:leading-tight">
+              <h1 className="md:text-[150px] text-6xl md:-mt-16 text-[#FF6B35] leading-tight">
                 TIP?
               </h1>
             </div>
@@ -148,7 +147,9 @@ const GotATip = () => {
                   placeholder="What is this about?"
                   value={formData.subject}
                   variant="outlined"
-                  onChange={(value) => handleChange({ target: { name: "subject", value } })}
+                  onChange={(value) =>
+                    handleChange({ target: { name: "subject", value } })
+                  }
                   onFocus={() => setFocusedField("subject")}
                   onBlur={() => setFocusedField(null)}
                   className="w-full bg-slate-500/30 border-2 border-gray-700 text-white focus:border-[#99FF00] focus:bg-slate-600/30 outline-none transition-all duration-300 appearance-none !pr-4 lg:!pr-5 pb-4 lg:pb-5 text-base lg:text-lg"
@@ -156,7 +157,7 @@ const GotATip = () => {
                     className: "text-white peer-placeholder-shown:!left-4 lg:!left-5 !left-4 lg:!left-5 text-base lg:text-lg" 
                   }}
                   containerProps={{
-                    className: "!min-w-0"
+                    className: "!min-w-0",
                   }}
                   menuProps={{
                     className: "bg-black border border-[#99FF00] text-white py-1 mt-1 text-base lg:text-lg",
@@ -210,7 +211,7 @@ const GotATip = () => {
             rotate: "-10deg",
           }}
         />
-        
+
         <img
           src={Bill}
           alt=""
