@@ -1,6 +1,9 @@
 # The GlassHouse – AI Powered News 
 
-This repository contains the backend for The GlassHouse, an AI powered news platform that curates, analyzes, and enhances news from reputable sources. The goal is to give readers clear, concise, and practical insights into how the news affects their daily lives.
+This repository contains code for The GlassHouse, an AI powered news platform that curates, analyzes, and enhances news from reputable sources. The goal is to give readers clear, concise, and practical insights into how the news affects their daily lives.
+
+https://glasshouse-ai.vercel.app/
+<img width="1918" height="910" alt="image" src="https://github.com/user-attachments/assets/2d0c3020-e0bb-42fe-94bf-1eefed50e3b1" />
 
 ---
 
